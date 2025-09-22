@@ -1,0 +1,101 @@
+name: Checkout
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - "main"
+      - "master"
+    tags:
+      - "[0-9]+.[0-9]+.[0-9]+"
+      - "[0-9]+.[0-9]+.[0-9]+-alpha"
+      - "[0-9]+.[0-9]+.[0-9]+-beta"
+      - "[0-9]+.[0-9]+.[0-9]+-rc"
+      - "[0-9]+.[0-9]+.[0-9]+-dev"
+      - "[0-9]+.[0-9]+.[0-9]+-preview"
+      - "[0-9]+.[0-9]+.[0-9]+-beta"
+      - "[0-9]+.[0-9]+.[0-9]+-stage"
+      - "[0-9]+.[0-9]+.[0-9]+-staging"
+      - "[0-9]+.[0-9]+.[0-9]+-live"
+      - "[0-9]+.[0-9]+.[0-9]+-prod"
+      - "[0-9]+.[0-9]+.[0-9]+-production"
+  pull_request:
+    branches:
+      - "main"
+      - "master"
+      - "dev"
+      - "develop"
+      - "feature/**"
+      - "bugfix/**"
+      - "hotfix/**"
+      - "support/**"
+    paths:
+      - "pubspec.yaml"
+      - ".github/**.yaml"
+      - ".github/**.yml"
+      - "bin/**.dart"
+      - "lib/**.dart"
+      - "test/**.dart"
+      - "example/**.dart"
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+
+jobs:
+  checkout:
+    name: "🧪 Check code with analysis, format, and tests"
+    runs-on: ubuntu-latest
+    env:
+      threshold: 5
+    defaults:
+      run:
+        working-directory: ./
+    timeout-minutes: 10
+    concurrency:
+      group: checkout-${{ github.workflow }}-${{ github.ref_name }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+
+    steps:
+      - name: 📦 Get the .github actions
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          sparse-checkout: |
+            .github
+
+      - name: 🚂 Setup Dart and dependencies
+        uses: ./.github/actions/setup
+        with:
+          dart-version: stable
+
+      - name: 🚦 Check code format
+        id: check-format
+        timeout-minutes: 1
+        run: |
+          find bin lib test -name "*.dart" ! -name "*.*.dart" -print0 | xargs -0 dart format --set-exit-if-changed --line-length 80 -o none bin/ lib/ test/
+
+      - name: 📈 Check analyzer
+        id: check-analyzer
+        timeout-minutes: 1
+        run: dart analyze --fatal-infos --fatal-warnings bin/ lib/ test/
+
+      - name: 🧪 Run tests
+        timeout-minutes: 5
+        run: |
+          dart pub global activate coverage
+          dart pub global run coverage:test_with_coverage -fb -o coverage -- \
+            --platform=vm --compiler=kernel --coverage=coverage \
+            --reporter=github --file-reporter=json:reports/tests.json \
+            --timeout=10m --concurrency=12 --color \
+              test/svg2dart_test.dart
+
+      - name: 📥 Upload test report
+        uses: actions/upload-artifact@v4
+        if: (success() || failure()) && ${{ github.actor != 'dependabot[bot]' }}
+        with:
+          name: test-results
+          path: reports/tests.json

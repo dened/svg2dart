@@ -1,0 +1,31 @@
+name: svg2dart
+description: A command-line tool to convert SVG files into pure Dart code for Flutter, generating widgets that use CustomPainter for rendering.
+version: 0.0.1
+homepage: https://github.com/dened/svg2dart 
+repository: https://github.com/dened/svg2dart
+issue_tracker: https://github.com/dened/svg2dart/issues
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+executables:
+  svg2dart:
+
+topics:
+  - svg
+  - flutter
+  - code-generation
+  - widget
+
+# Add regular dependencies here.
+dependencies:
+  args: ^2.7.0
+  vector_graphics_compiler:  ^1.1.19
+  vector_graphics_codec: ^1.1.13
+  path: ^1.9.1
+  meta: 1.17.0
+
+
+dev_dependencies:
+  lints: ^6.0.0 
+  test: ^1.26.3
