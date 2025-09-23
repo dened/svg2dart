@@ -23,7 +23,7 @@ dependencies:
   vector_graphics_compiler:  ^1.1.19
   vector_graphics_codec: ^1.1.13
   path: ^1.9.1
-  meta: 1.17.0
+  meta: ^1.17.0
 
 
 dev_dependencies:
