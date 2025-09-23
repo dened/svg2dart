@@ -1,3 +1,10 @@
+# Changelog
+
+## 0.0.2
+
+* Add formatting and fixing functions for SVG output.
+* Improve code generation.
+
 ## 0.0.1
 
 * Initial release of the package.
