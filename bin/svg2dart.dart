@@ -8,6 +8,24 @@ import 'package:svg2dart/src/generate.dart';
 final $log = io.stdout.writeln; // Log to stdout
 final $err = io.stderr.writeln; // Log to stderr
 
+Future<void> _format(String path) async {
+  $log('Formatting $path...');
+  final result = await io.Process.run('dart', ['format', path]);
+  if (result.exitCode != 0) {
+    // Don't exit, just warn.
+    $err('Could not format $path. Error: ${result.stderr}');
+  }
+}
+
+Future<void> _fix(String path) async {
+  $log('Applying fixes to $path...');
+  final result = await io.Process.run('dart', ['fix', '--apply', path]);
+  if (result.exitCode != 0) {
+    // Don't exit, just warn.
+    $err('Could not apply fixes to $path. Error: ${result.stderr}');
+  }
+}
+
 void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
       () async {
         final parser = ArgParser()
@@ -55,7 +73,9 @@ void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
           }
           $log('Start parsing file $inputPath...');
           await generateWidgets(inputPath, outputPath);
-          $log('Finished parsing.');
+          await _format(outputPath);
+          await _fix(outputPath);
+          $log('Finished conversion.');
         } else if (inputType == io.FileSystemEntityType.directory) {
           if (p.extension(outputPath) != '') {
             $err('When input is a directory, output must also be a directory.');
@@ -76,7 +96,9 @@ void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
                 p.join(outputPath, relativePath.replaceAll('-', '_')), '.dart');
             await generateWidgets(svgFile.path, outputFilePath);
           }
-          $log('Finished processing all SVG files.');
+          await _format(outputPath);
+          await _fix(outputPath);
+          $log('Finished conversion of all SVG files.');
         }
       },
       (error, stackTrace) {

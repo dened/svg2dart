@@ -32,6 +32,19 @@ class CustomPainterGenerator implements VectorGraphicsCodecListener {
   String _colorToCode(int value) =>
       'const Color(0x${(value & 0xFFFFFFFF).toRadixString(16).padLeft(8, '0')})';
 
+  String _d(double val) {
+    if (val == val.roundToDouble()) {
+      return val.toInt().toString();
+    }
+    // Округляем до 4 знаков, чтобы избежать "шума" чисел с плавающей запятой.
+    var s = val.toStringAsFixed(4);
+    // Убираем лишние нули в конце.
+    s = s.replaceAll(RegExp(r'0+$'), '');
+    // Убираем точку в конце, если она осталась.
+    s = s.replaceAll(RegExp(r'\.$'), '');
+    return s;
+  }
+
   bool get _hasImages => _images.isNotEmpty;
 
   String getFileContent(String widgetName, String painterName) {
@@ -41,6 +54,7 @@ class CustomPainterGenerator implements VectorGraphicsCodecListener {
     buffer.writeln('''
 // ignore_for_file: cascade_invocations, prefer_int_literals, unused_import
 
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/widgets.dart';
@@ -57,10 +71,12 @@ class $widgetName extends StatefulWidget {
     super.key,
     this.width,
     this.height,
+    this.colorFilter,
   });
   
   final double? width;
   final double? height;
+  final ui.ColorFilter? colorFilter;
 
   @override
   State<$widgetName> createState() => _${widgetName}State();
@@ -93,13 +109,13 @@ class _${widgetName}State extends State<$widgetName> {
   Widget build(BuildContext context) {
     if (!_imagesLoaded) {
       return SizedBox(
-        width: widget.width ?? ${_size.width},
-        height: widget.height ?? ${_size.height},
+        width: widget.width ?? ${_d(_size.width)},
+        height: widget.height ?? ${_d(_size.height)},
       );
     }
     return CustomPaint(
-      size: Size(widget.width ?? ${_size.width}, widget.height ?? ${_size.height}),
-      painter: $painterName(images: _images),
+      size: Size(widget.width ?? ${_d(_size.width)}, widget.height ?? ${_d(_size.height)}),
+      painter: $painterName(images: _images, colorFilter: widget.colorFilter),
     );
   }
 }
@@ -115,16 +131,17 @@ class $widgetName extends StatelessWidget {
     super.key,
     this.width,
     this.height,
+    this.colorFilter,
   });
 
   final double? width;
   final double? height;
+  final ui.ColorFilter? colorFilter;
 
   @override
   Widget build(BuildContext context) => CustomPaint(
-      size: Size(width ?? ${_size.width}, height ?? ${_size.height}),
-      painter: const $painterName(),
-    );
+      size: Size(width ?? ${_d(_size.width)}, height ?? ${_d(_size.height)}),
+      painter: $painterName(colorFilter: colorFilter));
 }
 ''');
     }
@@ -133,18 +150,28 @@ class $widgetName extends StatelessWidget {
       ..writeln('''
 
 class $painterName extends CustomPainter {
-  const $painterName(${_hasImages ? '{required this.images}' : ''});
+  const $painterName({
+    ${_hasImages ? 'required this.images,' : ''}
+    this.colorFilter,
+  });
 
   ${_hasImages ? 'final Map<int, ui.Image> images;' : ''}
+  final ui.ColorFilter? colorFilter;
 
   @override
   void paint(Canvas canvas, Size size) {
-    // TODO: Implement scaling based on size.
-    // The current implementation uses the original SVG size and does not scale.
-    // You can use size.width and size.height to calculate a scale factor.
-    // final scaleX = size.width / ${_size.width};
-    // final scaleY = size.height / ${_size.height};
-    // canvas.scale(scaleX, scaleY);
+    // Scale and center the drawing to fit the canvas while maintaining aspect ratio.
+    final scaleX = size.width /  ${_d(_size.width)};
+    final scaleY = size.height /${_d(_size.height)};
+    final scale = min(scaleX, scaleY);
+
+    final dx = (size.width - ${_d(_size.width)} * scale) / 2;
+    final dy = (size.height - ${_d(_size.height)} * scale) / 2;
+
+    canvas.save();    
+    canvas.translate(dx, dy);
+    canvas.scale(scale);
+
 
     ${hasText ? 'double? accumulatedTextPositionX;\n    var textPositionY = 0.0;' : ''}
 ''')
@@ -152,11 +179,15 @@ class $painterName extends CustomPainter {
       ..writeln()
       ..writeln(_drawCommands.toString())
       ..writeln('''
+    canvas.restore();
   }
 
   
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+  bool shouldRepaint(covariant $painterName oldDelegate) {
+    return oldDelegate.colorFilter != colorFilter
+      ${_hasImages ? '|| oldDelegate.images != images' : ''};
+  }
 }
 ''');
 
@@ -237,7 +268,7 @@ ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
     final paintVar = 'paint$id${paintStyle == 0 ? 'Fill' : 'Stroke'}';
     _paints[id] = paintVar;
     _definitions.writeln(
-      '    final $paintVar = Paint()..isAntiAlias = true..style = PaintingStyle.${paintStyle == 0 ? 'fill' : 'stroke'};',
+      '    final $paintVar = Paint()..isAntiAlias = true..style = PaintingStyle.${paintStyle == 0 ? 'fill' : 'stroke'}..colorFilter = colorFilter;',
     );
     if (shaderId != null && _shaders.containsKey(shaderId)) {
       _definitions.writeln('    $paintVar.shader = ${_shaders[shaderId]};');
@@ -248,7 +279,7 @@ ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
       // Stroke
       // SVG's default stroke width is 1.0. Flutter's default is 0.0.
       if (strokeWidth != null && strokeWidth != 0.0) {
-        _definitions.writeln('    $paintVar.strokeWidth = $strokeWidth;');
+        _definitions.writeln('    $paintVar.strokeWidth = ${_d(strokeWidth)};');
       }
       if (strokeCap != null && strokeCap != 0) {
         _definitions.writeln(
@@ -262,7 +293,7 @@ ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
       }
       if (strokeMiterLimit != null && strokeMiterLimit != 4.0) {
         _definitions.writeln(
-          '    $paintVar.strokeMiterLimit = $strokeMiterLimit;',
+          '    $paintVar.strokeMiterLimit = ${_d(strokeMiterLimit)};',
         );
       }
     }
@@ -286,12 +317,12 @@ ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
 
   @override
   void onPathMoveTo(double x, double y) {
-    _currentPathBuffer!.write('..moveTo($x, $y)');
+    _currentPathBuffer!.write('..moveTo(${_d(x)}, ${_d(y)})');
   }
 
   @override
   void onPathLineTo(double x, double y) {
-    _currentPathBuffer!.write('..lineTo($x, $y)');
+    _currentPathBuffer!.write('..lineTo(${_d(x)}, ${_d(y)})');
   }
 
   @override
@@ -303,7 +334,8 @@ ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
     double x3,
     double y3,
   ) {
-    _currentPathBuffer!.write('..cubicTo($x1, $y1, $x2, $y2, $x3, $y3)');
+    _currentPathBuffer!.write(
+        '..cubicTo(${_d(x1)}, ${_d(y1)}, ${_d(x2)}, ${_d(y2)}, ${_d(x3)}, ${_d(y3)})');
   }
 
   @override
@@ -345,8 +377,8 @@ ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
 
     _definitions.writeln(
       '    final $shaderVar = ui.Gradient.linear(\n'
-      '      const Offset($fromX, $fromY),\n'
-      '      const Offset($toX, $toY),\n'
+      '      const Offset(${_d(fromX)}, ${_d(fromY)}),\n'
+      '      const Offset(${_d(toX)}, ${_d(toY)}),\n'
       '      [$colorsList],\n'
       '      $offsetsList,\n'
       '      ui.TileMode.${TileMode.values[tileMode].name},\n'
@@ -400,13 +432,13 @@ ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
 
     _definitions.writeln(
       '    final $shaderVar = ui.Gradient.radial(\n'
-      '      const Offset($centerX, $centerY),\n'
-      '      $radius,\n'
+      '      const Offset(${_d(centerX)}, ${_d(centerY)}),\n'
+      '      ${_d(radius)},\n'
       '      [$colorsList],\n'
       '      $offsetsList,\n'
       '      ui.TileMode.${TileMode.values[tileMode].name},\n'
       '      $transformList,\n'
-      '      ${focalX != null ? 'const Offset($focalX, $focalY)' : 'null'},\n'
+      '      ${focalX != null ? 'const Offset(${_d(focalX)}, ${_d(focalY!)})' : 'null'},\n'
       '      0.0,\n'
       '    );',
     );
@@ -454,10 +486,10 @@ ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
     _definitions.writeln(
       '    final $configVar = _TextConfig(\n'
       "      '${text.replaceAll("'", r"\'")}',\n"
-      "      ${fontFamily == null ? 'null' : "'$fontFamily'"},\n"
-      '      $xAnchorMultiplier,\n'
+      "      ${fontFamily == null ? 'null' : "'$fontFamily'"},\n" // ignore: unnecessary_string_escapes
+      '      ${_d(xAnchorMultiplier)},\n'
       '      FontWeight.values[$fontWeight],\n'
-      '      $fontSize,\n'
+      '      ${_d(fontSize)},\n'
       '      $decoration,\n'
       '      $decorationStyle,\n'
       '      ${_colorToCode(decorationColor)},\n'
@@ -481,7 +513,7 @@ ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
         ? 'null'
         : 'Float64List.fromList(${transform.toString()})';
     _definitions.writeln(
-      '    const $positionVar = _TextPosition($x, $y, $dx, $dy, $reset, $transformList);',
+      '    const $positionVar = _TextPosition(${x == null ? 'null' : _d(x)}, ${y == null ? 'null' : _d(y)}, ${dx == null ? 'null' : _d(dx)}, ${dy == null ? 'null' : _d(dy)}, $reset, $transformList);',
     );
   }
 
@@ -567,7 +599,7 @@ ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
       ..writeln('    final image = $imageVar;')
       ..writeln('    if (image != null) {')
       ..writeln(
-        '      canvas.drawImageRect(image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()), Rect.fromLTWH($x, $y, $width, $height), Paint());',
+        '      canvas.drawImageRect(image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()), Rect.fromLTWH(${_d(x)}, ${_d(y)}, ${_d(width)}, ${_d(height)}), Paint()..colorFilter = colorFilter);',
       )
       ..writeln('    }');
   }

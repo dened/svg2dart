@@ -22,7 +22,9 @@ Future<void> generateWidgets(String inputPath, String outputPath) async {
   final outputDir = p.dirname(outputPath);
   await Directory(outputDir).create(recursive: true);
 
-  await File(outputPath).writeAsString(generatedCode);
+  final file = File(outputPath);
+  await file.writeAsString(generatedCode);
+
   stdout.writeln('Generated $outputPath');
 }
 

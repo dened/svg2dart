@@ -1,5 +1,5 @@
 // @dart=2.12
 
-library pubspec_generator;
+library svg2dart;
 
 export 'src/generate.dart';
