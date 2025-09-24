@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.3
+* Add support for build_runner
+
 ## 0.0.2
 
 * Add formatting and fixing functions for SVG output.

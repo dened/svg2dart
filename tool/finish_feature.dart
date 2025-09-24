@@ -180,7 +180,8 @@ Future<void> _deleteBranch(String featureBranch) async {
   _log('Deleting feature branch $featureBranch...');
   await _run('git', ['branch', '-D', featureBranch]);
 
-  // Check if the branch exists on the remote 'origin' before trying to delete it.
+  // Check if the branch exists on the remote 'origin'
+  // before trying to delete it.
   final remoteCheckResult = await io.Process.run(
       'git', ['ls-remote', '--exit-code', 'origin', featureBranch]);
 

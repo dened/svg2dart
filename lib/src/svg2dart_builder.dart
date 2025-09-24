@@ -13,8 +13,8 @@ class Svg2DartBuilder implements Builder {
   Svg2DartBuilder(BuilderOptions options)
       : _inputDirectory =
             options.config['input_dir'] as String? ?? 'assets/svg',
-        _outputDirectory = options.config['output_dir'] as String? ??
-            'lib/generated/svg';
+        _outputDirectory =
+            options.config['output_dir'] as String? ?? 'lib/generated/svg';
 
   @override
   Map<String, List<String>> get buildExtensions => {
