@@ -1,0 +1,17 @@
+targets:
+  $default:
+    builders:
+      svg2dart:
+        enabled: true
+        options:
+          input_dir: "assets/images"
+          output_dir: "lib/generated"
+
+
+builders:
+  svg2dart:
+    import: "package:svg2dart/svg2dart.dart"
+    builder_factories: ["svg2dartBuilder"]
+    build_extensions: { "$lib$": [".dart"] }
+    auto_apply: root_package
+    build_to: source

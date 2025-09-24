@@ -28,6 +28,20 @@ Future<void> generateWidgets(String inputPath, String outputPath) async {
   stdout.writeln('Generated $outputPath');
 }
 
+///
+/// Generates a Flutter widget and painter from an SVG file content.
+///
+String generateFromContent(
+  String svgContent,
+  String assetFilename,
+) {
+  final instructions = parseWithoutOptimizers(svgContent);
+  final generator = _playInstructions(instructions);
+  final widgetName = _snakeToPascalCase(assetFilename);
+  final painterName = '${widgetName}Painter';
+  return generator.getFileContent(widgetName, painterName);
+}
+
 String _snakeToPascalCase(String snakeCase) => snakeCase
     .split(RegExp('[_-]'))
     .where((s) => s.isNotEmpty)

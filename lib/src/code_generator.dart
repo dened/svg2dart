@@ -100,7 +100,7 @@ class _${widgetName}State extends State<$widgetName> {
   }
 
   Future<void> _loadImage(int id, List<int> data) async {
-    final codec = await ui.instantiateImageCodec(Uint8List.fromList(data));
+    final codec = await ui.instantiateImageCodec(Uint8List.fromList(data.cast<int>()));
     final frame = await codec.getNextFrame();
     _images[id] = frame.image;
   }

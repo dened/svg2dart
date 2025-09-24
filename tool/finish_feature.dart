@@ -116,7 +116,7 @@ Future<void> _formatAndCommitChanges(String featureBranch) async {
       _log('Committing formatted files...');
       await _run('git', [
         'add',
-        ...files,
+        '.',
       ]);
       await _run('git', ['commit', '-m', 'chore: Format dart files']);
     }
@@ -179,5 +179,13 @@ Future<void> _checkCommitInMaster(String featureBranch) async {
 Future<void> _deleteBranch(String featureBranch) async {
   _log('Deleting feature branch $featureBranch...');
   await _run('git', ['branch', '-D', featureBranch]);
-  await _run('git', ['push', 'origin', '--delete', featureBranch]);
+
+  // Check if the branch exists on the remote 'origin' before trying to delete it.
+  final remoteCheckResult = await io.Process.run(
+      'git', ['ls-remote', '--exit-code', 'origin', featureBranch]);
+
+  if (remoteCheckResult.exitCode == 0) {
+    _log('Deleting remote branch $featureBranch from origin...');
+    await _run('git', ['push', 'origin', '--delete', featureBranch]);
+  }
 }

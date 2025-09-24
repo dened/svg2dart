@@ -1,0 +1,8 @@
+targets:
+  $default:
+    builders:
+      svg2dart:
+        enabled: true
+        options:
+          input_dir: "assets/svg"
+          output_dir: "lib/generated/icons"
