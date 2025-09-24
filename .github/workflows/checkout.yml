@@ -27,6 +27,7 @@ on:
       - "develop"
       - "feature/**"
       - "bugfix/**"
+      - "fix/**"
       - "hotfix/**"
       - "support/**"
     paths:

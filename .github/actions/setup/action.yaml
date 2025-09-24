@@ -26,7 +26,7 @@ runs:
         UNIXTIME=$(date +%s)
         VERSION="${BASE_VERSION}+${UNIXTIME}"
         echo "VERSION=$VERSION" >> $GITHUB_ENV
-        sed -i "s/^version: .*/version: ${VERSION}/" pubspec.yaml
+        sed -i "s#^version: .*#version: ${VERSION}#" pubspec.yaml
         echo "Version set to $VERSION"
 
     - name: 🚂 Setup Dart
