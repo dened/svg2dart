@@ -1,69 +1,219 @@
 // ignore_for_file: cascade_invocations, prefer_int_literals, unused_import
 
 import 'dart:math';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/widgets.dart';
 
-/// {@template Circle}
-/// Circle widget.
+/// {@template Cloud}
+/// Cloud widget.
 /// {@endtemplate}
-class Circle extends StatelessWidget {
-  /// {@macro Circle}
-  const Circle({super.key, this.width, this.height, this.colorFilter});
+class Cloud extends LeafRenderObjectWidget {
+  /// {@macro Cloud}
+  const Cloud({super.key, this.width, this.height, this.colorFilter});
 
   final double? width;
   final double? height;
   final ui.ColorFilter? colorFilter;
 
+  static const Size svgSize = Size(463.8343, 463);
+
   @override
-  Widget build(BuildContext context) => CustomPaint(
-    size: Size(width ?? 128, height ?? 128),
-    painter: CirclePainter(colorFilter: colorFilter),
-  );
+  RenderObject createRenderObject(BuildContext context) => CloudRenderObject()
+    ..width = width
+    ..height = height
+    ..colorFilter = colorFilter;
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    CloudRenderObject renderObject,
+  ) {
+    renderObject
+      ..width = width
+      ..height = height
+      ..colorFilter = colorFilter;
+  }
 }
 
-class CirclePainter extends CustomPainter {
-  const CirclePainter({this.colorFilter});
+class CloudRenderObject extends RenderBox {
+  CloudRenderObject();
 
-  final ui.ColorFilter? colorFilter;
+  ui.ColorFilter? _colorFilter;
+  double? _width;
+  double? _height;
+
+  set width(double? value) {
+    if (_width == value) {
+      return;
+    }
+    _width = value;
+    markNeedsLayout();
+  }
+
+  set height(double? value) {
+    if (_height == value) {
+      return;
+    }
+    _height = value;
+    markNeedsLayout();
+  }
+
+  set colorFilter(ui.ColorFilter? value) {
+    if (_colorFilter == value) {
+      return;
+    }
+    _colorFilter = value;
+    markNeedsPaint();
+  }
+
+  double _scale = 1.0;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    // Scale and center the drawing to fit the canvas while maintaining aspect ratio.
-    final scaleX = size.width / 128;
-    final scaleY = size.height / 128;
-    final scale = min(scaleX, scaleY);
+  bool get isRepaintBoundary => false;
 
-    final dx = (size.width - 128 * scale) / 2;
-    final dy = (size.height - 128 * scale) / 2;
+  @override
+  bool get sizedByParent => false;
 
-    canvas.save();
-    canvas.translate(dx, dy);
-    canvas.scale(scale);
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    final desiredWidth = _width ?? Cloud.svgSize.width;
+    final desiredHeight = _height ?? Cloud.svgSize.height;
+    final desiredSize = Size(desiredWidth, desiredHeight);
+    return constraints.constrain(desiredSize);
+  }
 
-    final paint0Fill = Paint()
-      ..isAntiAlias = true
-      ..style = PaintingStyle.fill
-      ..colorFilter = colorFilter;
-    paint0Fill.color = const Color(0xffff0000);
-    paint0Fill.blendMode = BlendMode.srcOver;
+  @override
+  void performLayout() {
+    size = computeDryLayout(constraints);
+    if (Cloud.svgSize.width == 0 || Cloud.svgSize.height == 0) {
+      _scale = 1.0;
+      return;
+    }
+    _scale = min(
+      size.width / Cloud.svgSize.width,
+      size.height / Cloud.svgSize.height,
+    );
+  }
 
-    var path_0 = Path()
-      ..moveTo(64, 0)
-      ..cubicTo(99.3226, 0, 128, 28.6774, 128, 64)
-      ..cubicTo(128, 99.3226, 99.3226, 128, 64, 128)
-      ..cubicTo(28.6774, 128, 0, 99.3226, 0, 64)
-      ..cubicTo(0, 28.6774, 28.6774, 0, 64, 0)
-      ..close();
+  @override
+  bool hitTestSelf(Offset position) => true;
 
-    canvas.drawPath(path_0, paint0Fill);
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final scale = _scale;
+    final canvas = context.canvas..save();
+
+    final dx = (size.width - Cloud.svgSize.width * scale) / 2;
+    final dy = (size.height - Cloud.svgSize.height * scale) / 2;
+
+    canvas
+      ..translate(offset.dx + dx, offset.dy + dy)
+      ..scale(scale, scale);
+
+    if (_colorFilter != null) {
+      canvas.saveLayer(null, Paint()..colorFilter = _colorFilter);
+    }
+
+    canvas.drawPicture(_picture);
+
+    if (_colorFilter != null) {
+      canvas.restore();
+    }
 
     canvas.restore();
   }
 
-  @override
-  bool shouldRepaint(covariant CirclePainter oldDelegate) {
-    return oldDelegate.colorFilter != colorFilter;
-  }
+  static final ui.Picture _picture = () {
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    const size = Cloud.svgSize;
+
+    final paint0Fill = Paint()
+      ..isAntiAlias = true
+      ..style = PaintingStyle.fill;
+    paint0Fill.color = const Color(0xffa3d4f7);
+    paint0Fill.blendMode = BlendMode.srcOver;
+
+    final path_0 = Path()
+      ..moveTo(size.width * 0.8103, size.height * 0.4319)
+      ..cubicTo(
+        size.width * 0.7977,
+        size.height * 0.4319,
+        size.width * 0.7851,
+        size.height * 0.4331,
+        size.width * 0.7727,
+        size.height * 0.4356,
+      )
+      ..cubicTo(
+        size.width * 0.7634,
+        size.height * 0.389,
+        size.width * 0.7332,
+        size.height * 0.3493,
+        size.width * 0.6909,
+        size.height * 0.3277,
+      )
+      ..cubicTo(
+        size.width * 0.6486,
+        size.height * 0.3062,
+        size.width * 0.5988,
+        size.height * 0.3053,
+        size.width * 0.5557,
+        size.height * 0.3253,
+      )
+      ..cubicTo(
+        size.width * 0.5167,
+        size.height * 0.2177,
+        size.width * 0.3981,
+        size.height * 0.1622,
+        size.width * 0.2908,
+        size.height * 0.2012,
+      )
+      ..cubicTo(
+        size.width * 0.1834,
+        size.height * 0.2403,
+        size.width * 0.128,
+        size.height * 0.3591,
+        size.width * 0.1669,
+        size.height * 0.4667,
+      )
+      ..cubicTo(
+        size.width * 0.0729,
+        size.height * 0.4697,
+        size.width * -0.0014,
+        size.height * 0.5476,
+        size.width * 0,
+        size.height * 0.6419,
+      )
+      ..cubicTo(
+        size.width * 0.0014,
+        size.height * 0.7361,
+        size.width * 0.078,
+        size.height * 0.8119,
+        size.width * 0.1721,
+        size.height * 0.812,
+      )
+      ..lineTo(size.width * 0.8103, size.height * 0.812)
+      ..cubicTo(
+        size.width * 0.9151,
+        size.height * 0.812,
+        size.width * 1,
+        size.height * 0.7269,
+        size.width * 1,
+        size.height * 0.6219,
+      )
+      ..cubicTo(
+        size.width * 1,
+        size.height * 0.517,
+        size.width * 0.9151,
+        size.height * 0.4319,
+        size.width * 0.8103,
+        size.height * 0.4319,
+      )
+      ..close()
+      ..moveTo(size.width * 0.8103, size.height * 0.4319);
+
+    canvas.drawPath(path_0, paint0Fill);
+
+    return recorder.endRecording();
+  }();
 }

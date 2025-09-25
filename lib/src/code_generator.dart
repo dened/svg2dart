@@ -17,18 +17,13 @@ class CodeGenerator implements VectorGraphicsCodecListener {
   final Map<int, String> _textConfigs = <int, String>{};
   final Map<int, String> _textPositions = <int, String>{};
   final Map<int, String> _images = <int, String>{};
-
-  // Paint по умолчанию, если у пути нет своего стиля.
-  static const String _emptyPaint = 'Paint()';
-
-  // Paint для маски, аналогично FlutterVectorGraphicsListener
+  bool _hasImages = false;
   static const String _grayscaleDstInPaint =
       'Paint()..blendMode = BlendMode.dstIn..colorFilter = const ColorFilter.matrix(<double>[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.2126,0.7152,0.0722,0,0,])';
 
   StringBuffer? _currentPathBuffer;
 
   Size _size = Size.zero;
-
   String _colorToCode(int value) =>
       'const Color(0x${(value & 0xFFFFFFFF).toRadixString(16).padLeft(8, '0')})';
 
@@ -36,213 +31,159 @@ class CodeGenerator implements VectorGraphicsCodecListener {
     if (val == val.roundToDouble()) {
       return val.toInt().toString();
     }
-    // Округляем до 4 знаков, чтобы избежать "шума" чисел с плавающей запятой.
     var s = val.toStringAsFixed(4);
-    // Убираем лишние нули в конце.
     s = s.replaceAll(RegExp(r'0+$'), '');
-    // Убираем точку в конце, если она осталась.
     s = s.replaceAll(RegExp(r'\.$'), '');
     return s;
   }
 
-  bool get _hasImages => _images.isNotEmpty;
-
   String getFileContent(String widgetName, String painterName) {
-    final buffer = StringBuffer();
-    final hasText = _textConfigs.isNotEmpty;
+    if (_hasImages) {
+      // ignore: avoid_print
+      print(
+        'Warning: SVG file for "$widgetName" contains an image, which is not supported. Skipping file generation.',
+      );
+      return '';
+    }
 
-    buffer.writeln('''
+    final buffer = StringBuffer()..writeln('''
 // ignore_for_file: cascade_invocations, prefer_int_literals, unused_import
 
 import 'dart:math';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/widgets.dart';
-''');
 
-    if (_hasImages) {
-      buffer.writeln('''
 /// {@template $widgetName}
 /// $widgetName widget.
 /// {@endtemplate}
-class $widgetName extends StatefulWidget {
+class $widgetName extends LeafRenderObjectWidget {
   /// {@macro $widgetName}
-  const $widgetName({
-    super.key,
-    this.width,
-    this.height,
-    this.colorFilter,
-  });
-  
+  const $widgetName({super.key, this.width, this.height, this.colorFilter});
+
   final double? width;
   final double? height;
   final ui.ColorFilter? colorFilter;
 
+  static const Size svgSize = Size(${_d(_size.width)}, ${_d(_size.height)});
+
   @override
-  State<$widgetName> createState() => _${widgetName}State();
+  RenderObject createRenderObject(BuildContext context) =>
+      ${widgetName}RenderObject()
+        ..width = width
+        ..height = height
+        ..colorFilter = colorFilter;
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    ${widgetName}RenderObject renderObject,
+  ) {
+    renderObject
+      ..width = width
+      ..height = height
+      ..colorFilter = colorFilter;
+  }
 }
 
-class _${widgetName}State extends State<$widgetName> {
-  final Map<int, ui.Image> _images = <int, ui.Image>{};
-  bool _imagesLoaded = false;
+class ${widgetName}RenderObject extends RenderBox {
+  ${widgetName}RenderObject();
 
-  @override
-  void initState() {
-    super.initState();
-    _loadImages();
-  }
+  ui.ColorFilter? _colorFilter;
+  double? _width;
+  double? _height;
 
-  Future<void> _loadImages() async {
-    ${_images.entries.map((e) => '    await _loadImage(${e.key}, ${e.value});').join('\n')}
-    setState(() {
-      _imagesLoaded = true;
-    });
-  }
-
-  Future<void> _loadImage(int id, List<int> data) async {
-    final codec = await ui.instantiateImageCodec(Uint8List.fromList(data.cast<int>()));
-    final frame = await codec.getNextFrame();
-    _images[id] = frame.image;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (!_imagesLoaded) {
-      return SizedBox(
-        width: widget.width ?? ${_d(_size.width)},
-        height: widget.height ?? ${_d(_size.height)},
-      );
+  set width(double? value) {
+    if (_width == value) {
+      return;
     }
-    return CustomPaint(
-      size: Size(widget.width ?? ${_d(_size.width)}, widget.height ?? ${_d(_size.height)}),
-      painter: $painterName(images: _images, colorFilter: widget.colorFilter),
+    _width = value;
+    markNeedsLayout();
+  }
+
+  set height(double? value) {
+    if (_height == value) {
+      return;
+    }
+    _height = value;
+    markNeedsLayout();
+  }
+
+  set colorFilter(ui.ColorFilter? value) {
+    if (_colorFilter == value) {
+      return;
+    }
+    _colorFilter = value;
+    markNeedsPaint();
+  }
+
+  double _scale = 1.0;
+
+  @override
+  bool get isRepaintBoundary => false;
+
+  @override
+  bool get sizedByParent => false;
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    final desiredWidth = _width ?? $widgetName.svgSize.width;
+    final desiredHeight = _height ?? $widgetName.svgSize.height;
+    final desiredSize = Size(desiredWidth, desiredHeight);
+    return constraints.constrain(desiredSize);
+  }
+
+  @override
+  void performLayout() {
+    size = computeDryLayout(constraints);
+    if ($widgetName.svgSize.width == 0 || $widgetName.svgSize.height == 0) {
+      _scale = 1.0;
+      return;
+    }
+    _scale = min(
+      size.width / $widgetName.svgSize.width,
+      size.height / $widgetName.svgSize.height,
     );
   }
-}
-''');
-    } else {
-      buffer.writeln('''
-/// {@template $widgetName}
-/// $widgetName widget.
-/// {@endtemplate}
-class $widgetName extends StatelessWidget {
-  /// {@macro $widgetName}
-  const $widgetName({
-    super.key,
-    this.width,
-    this.height,
-    this.colorFilter,
-  });
-
-  final double? width;
-  final double? height;
-  final ui.ColorFilter? colorFilter;
 
   @override
-  Widget build(BuildContext context) => CustomPaint(
-      size: Size(width ?? ${_d(_size.width)}, height ?? ${_d(_size.height)}),
-      painter: $painterName(colorFilter: colorFilter));
-}
-''');
+  bool hitTestSelf(Offset position) => true;
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final scale = _scale;
+    final canvas = context.canvas..save();
+
+    final dx = (size.width - $widgetName.svgSize.width * scale) / 2;
+    final dy = (size.height - $widgetName.svgSize.height * scale) / 2;
+
+    canvas
+      ..translate(offset.dx + dx, offset.dy + dy)
+      ..scale(scale, scale);
+
+    if (_colorFilter != null) {
+      canvas.saveLayer(null, Paint()..colorFilter = _colorFilter);
     }
 
-    buffer
-      ..writeln('''
+    canvas.drawPicture(_picture);
 
-class $painterName extends CustomPainter {
-  const $painterName({
-    ${_hasImages ? 'required this.images,' : ''}
-    this.colorFilter,
-  });
+    if (_colorFilter != null) {
+      canvas.restore();
+    }
 
-  ${_hasImages ? 'final Map<int, ui.Image> images;' : ''}
-  final ui.ColorFilter? colorFilter;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    // Scale and center the drawing to fit the canvas while maintaining aspect ratio.
-    final scaleX = size.width /  ${_d(_size.width)};
-    final scaleY = size.height /${_d(_size.height)};
-    final scale = min(scaleX, scaleY);
-
-    final dx = (size.width - ${_d(_size.width)} * scale) / 2;
-    final dy = (size.height - ${_d(_size.height)} * scale) / 2;
-
-    canvas.save();    
-    canvas.translate(dx, dy);
-    canvas.scale(scale);
-
-
-    ${hasText ? 'double? accumulatedTextPositionX;\n    var textPositionY = 0.0;' : ''}
-''')
-      ..writeln(_definitions.toString())
-      ..writeln()
-      ..writeln(_drawCommands.toString())
-      ..writeln('''
     canvas.restore();
   }
 
-  
-  @override
-  bool shouldRepaint(covariant $painterName oldDelegate) {
-    return oldDelegate.colorFilter != colorFilter
-      ${_hasImages ? '|| oldDelegate.images != images' : ''};
-  }
+  static final ui.Picture _picture = () {
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    const size = $widgetName.svgSize;
+
+${_definitions.toString()}
+${_drawCommands.toString()}
+    return recorder.endRecording();
+  }();
 }
 ''');
-
-    if (hasText) {
-      buffer.writeln('''
-class _TextConfig {
-  const _TextConfig(
-    this.text,
-    this.fontFamily,
-    this.xAnchorMultiplier,
-    this.fontWeight,
-    this.fontSize,
-    this.decoration,
-    this.decorationStyle,
-    this.decorationColor,
-  );
-
-  final String text;
-  final String? fontFamily;
-  final double xAnchorMultiplier;
-  final FontWeight fontWeight;
-  final double fontSize;
-  final int decoration;
-  final int decorationStyle;
-  final Color decorationColor;
-}
-
-class _TextPosition {
-  const _TextPosition(this.x, this.y, this.dx, this.dy, this.reset, this.transform);
-
-  final double? x;
-  final double? y;
-  final double? dx;
-  final double? dy;
-  final bool reset;
-  final Float64List? transform;
-}
-
-ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
-  final builder = ui.ParagraphBuilder(ui.ParagraphStyle(
-    fontFamily: config.fontFamily,
-    fontWeight: config.fontWeight,
-    fontSize: config.fontSize,
-  ));
-  builder.pushStyle(ui.TextStyle(
-    foreground: paint,
-    // TODO: support decoration.
-  ));
-  builder.addText(config.text);
-  final paragraph = builder.build();
-  paragraph.layout(const ui.ParagraphConstraints(width: double.infinity));
-  return paragraph;
-}
-''');
-    }
 
     return buffer.toString();
   }
@@ -267,13 +208,15 @@ ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
   }) {
     final paintVar = 'paint$id${paintStyle == 0 ? 'Fill' : 'Stroke'}';
     _paints[id] = paintVar;
-    _definitions.writeln(
-      '    final $paintVar = Paint()..isAntiAlias = true..style = PaintingStyle.${paintStyle == 0 ? 'fill' : 'stroke'}..colorFilter = colorFilter;',
-    );
+    _definitions
+      ..write('    final $paintVar = Paint()..isAntiAlias = true')
+      ..writeln(
+          '..style = PaintingStyle.${paintStyle == 0 ? 'fill' : 'stroke'};');
     if (shaderId != null && _shaders.containsKey(shaderId)) {
       _definitions.writeln('    $paintVar.shader = ${_shaders[shaderId]};');
     } else {
-      _definitions.writeln('    $paintVar.color = ${_colorToCode(color)};');
+      _definitions.writeln(
+          '    $paintVar.color = ${_colorToCode(color)};'); // Don't add colorFilter here
     }
     if (paintStyle == 1) {
       // Stroke
@@ -309,34 +252,30 @@ ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
   void onPathStart(int id, int fillType) {
     final pathVar = 'path_$id';
     _paths[id] = pathVar;
-    _currentPathBuffer = StringBuffer('    var $pathVar = Path()');
+    _currentPathBuffer = StringBuffer('    final $pathVar = Path()');
     if (fillType != 0) {
       _currentPathBuffer!.write('..fillType = PathFillType.values[$fillType]');
     }
   }
 
   @override
-  void onPathMoveTo(double x, double y) {
-    _currentPathBuffer!.write('..moveTo(${_d(x)}, ${_d(y)})');
-  }
+  void onPathMoveTo(double x, double y) => _currentPathBuffer!.write(
+      '..moveTo(size.width * ${_d(x / _size.width)}, size.height * ${_d(y / _size.height)})');
 
   @override
-  void onPathLineTo(double x, double y) {
-    _currentPathBuffer!.write('..lineTo(${_d(x)}, ${_d(y)})');
-  }
+  void onPathLineTo(double x, double y) => _currentPathBuffer!.write(
+      '..lineTo(size.width * ${_d(x / _size.width)}, size.height * ${_d(y / _size.height)})');
 
   @override
   void onPathCubicTo(
-    double x1,
-    double y1,
-    double x2,
-    double y2,
-    double x3,
-    double y3,
-  ) {
-    _currentPathBuffer!.write(
-        '..cubicTo(${_d(x1)}, ${_d(y1)}, ${_d(x2)}, ${_d(y2)}, ${_d(x3)}, ${_d(y3)})');
-  }
+          double x1, double y1, double x2, double y2, double x3, double y3) =>
+      _currentPathBuffer!.write('..cubicTo('
+          'size.width * ${_d(x1 / _size.width)}, '
+          'size.height * ${_d(y1 / _size.height)}, '
+          'size.width * ${_d(x2 / _size.width)}, '
+          'size.height * ${_d(y2 / _size.height)}, '
+          'size.width * ${_d(x3 / _size.width)}, '
+          'size.height * ${_d(y3 / _size.height)})');
 
   @override
   void onPathClose() {
@@ -346,15 +285,16 @@ ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
   @override
   void onPathFinished() {
     _currentPathBuffer!.write(';');
-    _definitions.writeln(_currentPathBuffer.toString());
+    _definitions
+      ..writeln(_currentPathBuffer.toString())
+      ..writeln();
     _currentPathBuffer = null;
   }
 
   @override
   void onDrawPath(int pathId, int? paintId, int? patternId) {
     final pathVar = _paths[pathId];
-
-    final paintVar = (paintId != null ? _paints[paintId] : null) ?? _emptyPaint;
+    final paintVar = _paints[paintId]!;
     _drawCommands.writeln('    canvas.drawPath($pathVar, $paintVar);');
   }
 
@@ -375,15 +315,14 @@ ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
     final offsetsList =
         offsets?.isNotEmpty == true ? '[${offsets!.join(', ')}]' : 'null';
 
-    _definitions.writeln(
-      '    final $shaderVar = ui.Gradient.linear(\n'
-      '      const Offset(${_d(fromX)}, ${_d(fromY)}),\n'
-      '      const Offset(${_d(toX)}, ${_d(toY)}),\n'
-      '      [$colorsList],\n'
-      '      $offsetsList,\n'
-      '      ui.TileMode.${TileMode.values[tileMode].name},\n'
-      '    );',
-    );
+    _definitions
+      ..writeln('    final $shaderVar = ui.Gradient.linear(')
+      ..writeln('      const Offset(${_d(fromX)}, ${_d(fromY)}),')
+      ..writeln('      const Offset(${_d(toX)}, ${_d(toY)}),')
+      ..writeln('      [$colorsList],')
+      ..writeln('      $offsetsList,')
+      ..writeln('      ui.TileMode.${TileMode.values[tileMode].name},')
+      ..writeln('    );');
   }
 
   @override
@@ -430,18 +369,18 @@ ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
         ? 'Float64List.fromList(${transform.toList()})'
         : 'null';
 
-    _definitions.writeln(
-      '    final $shaderVar = ui.Gradient.radial(\n'
-      '      const Offset(${_d(centerX)}, ${_d(centerY)}),\n'
-      '      ${_d(radius)},\n'
-      '      [$colorsList],\n'
-      '      $offsetsList,\n'
-      '      ui.TileMode.${TileMode.values[tileMode].name},\n'
-      '      $transformList,\n'
-      '      ${focalX != null ? 'const Offset(${_d(focalX)}, ${_d(focalY!)})' : 'null'},\n'
-      '      0.0,\n'
-      '    );',
-    );
+    _definitions
+      ..writeln('    final $shaderVar = ui.Gradient.radial(')
+      ..writeln('      const Offset(${_d(centerX)}, ${_d(centerY)}),')
+      ..writeln('      ${_d(radius)},')
+      ..writeln('      [$colorsList],')
+      ..writeln('      $offsetsList,')
+      ..writeln('      ui.TileMode.${TileMode.values[tileMode].name},')
+      ..writeln('      $transformList,')
+      ..writeln(
+          '      ${focalX != null ? 'const Offset(${_d(focalX)}, ${_d(focalY!)})' : 'null'},')
+      ..writeln('      0.0,')
+      ..writeln('    );');
   }
 
   @override
@@ -463,7 +402,7 @@ ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
       '    final $verticesVar = ui.Vertices.raw(ui.VertexMode.triangles, Float32List.fromList(${vertices.toString()}), indices: $indicesList);',
     );
 
-    final paintVar = (paintId != null ? _paints[paintId] : null) ?? _emptyPaint;
+    final paintVar = _paints[paintId]!;
     _drawCommands.writeln(
       '    canvas.drawVertices($verticesVar, BlendMode.srcOver, $paintVar);',
     );
@@ -483,18 +422,18 @@ ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
   ) {
     final configVar = 'textConfig$id';
     _textConfigs[id] = configVar;
-    _definitions.writeln(
-      '    final $configVar = _TextConfig(\n'
-      "      '${text.replaceAll("'", r"\'")}',\n"
-      "      ${fontFamily == null ? 'null' : "'$fontFamily'"},\n" // ignore: unnecessary_string_escapes
-      '      ${_d(xAnchorMultiplier)},\n'
-      '      FontWeight.values[$fontWeight],\n'
-      '      ${_d(fontSize)},\n'
-      '      $decoration,\n'
-      '      $decorationStyle,\n'
-      '      ${_colorToCode(decorationColor)},\n'
-      '    );',
-    );
+    _definitions
+      ..writeln('    final $configVar = _TextConfig(')
+      ..writeln("      '${text.replaceAll("'", r"\'")}',")
+      ..writeln(
+          "      ${fontFamily == null ? 'null' : "'$fontFamily'"},") // ignore: unnecessary_string_escapes
+      ..writeln('      ${_d(xAnchorMultiplier)},')
+      ..writeln('      FontWeight.values[$fontWeight],')
+      ..writeln('      ${_d(fontSize)},')
+      ..writeln('      $decoration,')
+      ..writeln('      $decorationStyle,')
+      ..writeln('      ${_colorToCode(decorationColor)},')
+      ..writeln('    );');
   }
 
   @override
@@ -513,8 +452,7 @@ ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
         ? 'null'
         : 'Float64List.fromList(${transform.toString()})';
     _definitions.writeln(
-      '    const $positionVar = _TextPosition(${x == null ? 'null' : _d(x)}, ${y == null ? 'null' : _d(y)}, ${dx == null ? 'null' : _d(dx)}, ${dy == null ? 'null' : _d(dy)}, $reset, $transformList);',
-    );
+        '    const $positionVar = _TextPosition(${x == null ? 'null' : _d(x)}, ${y == null ? 'null' : _d(y)}, ${dx == null ? 'null' : _d(dx)}, ${dy == null ? 'null' : _d(dy)}, $reset, $transformList);');
   }
 
   @override
@@ -570,15 +508,8 @@ ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
     Uint8List data, {
     VectorGraphicsErrorListener? onError,
   }) {
-    // Implement image handling. This is complex because image decoding is async,
-    // but the paint method is sync. A common approach is to make the wrapper widget
-    // stateful, load images in initState, and pass the ui.Image objects to the painter.
-    _definitions.writeln(
-      '    // onImage callback for imageId $imageId is not implemented.',
-    );
-    final imageVar = 'imageData$imageId';
-    _images[imageId] = imageVar;
-    _definitions.writeln('    const $imageVar = <int>[${data.join(',')}];');
+    _hasImages = true;
+    _images[imageId] = 'imageData$imageId';
   }
 
   @override
@@ -590,18 +521,7 @@ ui.Paragraph _buildParagraph(_TextConfig config, Paint? paint) {
     double height,
     Float64List? transform,
   ) {
-    // See onImage. Once images are loaded, they can be drawn here.
-    final imageVar = 'images[$imageId]';
-    _drawCommands
-      ..writeln(
-        '    // onDrawImage callback for imageId $imageId is not implemented.',
-      )
-      ..writeln('    final image = $imageVar;')
-      ..writeln('    if (image != null) {')
-      ..writeln(
-        '      canvas.drawImageRect(image, Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()), Rect.fromLTWH(${_d(x)}, ${_d(y)}, ${_d(width)}, ${_d(height)}), Paint()..colorFilter = colorFilter);',
-      )
-      ..writeln('    }');
+    // Not implemented as per request.
   }
 
   void onPatternFinished() {

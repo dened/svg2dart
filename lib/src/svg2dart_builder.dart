@@ -2,8 +2,8 @@ import 'dart:async';
 
 import 'package:build/build.dart';
 import 'package:path/path.dart' as p;
-import 'package:svg2dart/src/svg_reader.dart';
 import 'package:svg2dart/src/generator_options.dart';
+import 'package:svg2dart/src/svg_reader.dart';
 
 /// Pubspec builder
 Builder svg2dartBuilder(BuilderOptions options) =>

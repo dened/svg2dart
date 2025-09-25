@@ -1,14 +1,13 @@
 // ignore_for_file: cascade_invocations, prefer_int_literals, unused_import
 
 import 'dart:math';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/widgets.dart';
 
 /// {@template Circle}
 /// Circle widget.
 /// {@endtemplate}
-class Circle extends StatelessWidget {
+class Circle extends LeafRenderObjectWidget {
   /// {@macro Circle}
   const Circle({super.key, this.width, this.height, this.colorFilter});
 
@@ -16,54 +15,163 @@ class Circle extends StatelessWidget {
   final double? height;
   final ui.ColorFilter? colorFilter;
 
+  static const Size svgSize = Size(128, 128);
+
   @override
-  Widget build(BuildContext context) => CustomPaint(
-    size: Size(width ?? 128, height ?? 128),
-    painter: CirclePainter(colorFilter: colorFilter),
-  );
+  RenderObject createRenderObject(BuildContext context) => CircleRenderObject()
+    ..width = width
+    ..height = height
+    ..colorFilter = colorFilter;
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    CircleRenderObject renderObject,
+  ) {
+    renderObject
+      ..width = width
+      ..height = height
+      ..colorFilter = colorFilter;
+  }
 }
 
-class CirclePainter extends CustomPainter {
-  const CirclePainter({this.colorFilter});
+class CircleRenderObject extends RenderBox {
+  CircleRenderObject();
 
-  final ui.ColorFilter? colorFilter;
+  ui.ColorFilter? _colorFilter;
+  double? _width;
+  double? _height;
+
+  set width(double? value) {
+    if (_width == value) {
+      return;
+    }
+    _width = value;
+    markNeedsLayout();
+  }
+
+  set height(double? value) {
+    if (_height == value) {
+      return;
+    }
+    _height = value;
+    markNeedsLayout();
+  }
+
+  set colorFilter(ui.ColorFilter? value) {
+    if (_colorFilter == value) {
+      return;
+    }
+    _colorFilter = value;
+    markNeedsPaint();
+  }
+
+  double _scale = 1.0;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    // Scale and center the drawing to fit the canvas while maintaining aspect ratio.
-    final scaleX = size.width / 128;
-    final scaleY = size.height / 128;
-    final scale = min(scaleX, scaleY);
+  bool get isRepaintBoundary => false;
 
-    final dx = (size.width - 128 * scale) / 2;
-    final dy = (size.height - 128 * scale) / 2;
+  @override
+  bool get sizedByParent => false;
 
-    canvas.save();
-    canvas.translate(dx, dy);
-    canvas.scale(scale);
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    final desiredWidth = _width ?? Circle.svgSize.width;
+    final desiredHeight = _height ?? Circle.svgSize.height;
+    final desiredSize = Size(desiredWidth, desiredHeight);
+    return constraints.constrain(desiredSize);
+  }
 
-    final paint0Fill = Paint()
-      ..isAntiAlias = true
-      ..style = PaintingStyle.fill
-      ..colorFilter = colorFilter;
-    paint0Fill.color = const Color(0xffff0000);
-    paint0Fill.blendMode = BlendMode.srcOver;
+  @override
+  void performLayout() {
+    size = computeDryLayout(constraints);
+    if (Circle.svgSize.width == 0 || Circle.svgSize.height == 0) {
+      _scale = 1.0;
+      return;
+    }
+    _scale = min(
+      size.width / Circle.svgSize.width,
+      size.height / Circle.svgSize.height,
+    );
+  }
 
-    var path_0 = Path()
-      ..moveTo(64, 0)
-      ..cubicTo(99.3226, 0, 128, 28.6774, 128, 64)
-      ..cubicTo(128, 99.3226, 99.3226, 128, 64, 128)
-      ..cubicTo(28.6774, 128, 0, 99.3226, 0, 64)
-      ..cubicTo(0, 28.6774, 28.6774, 0, 64, 0)
-      ..close();
+  @override
+  bool hitTestSelf(Offset position) => true;
 
-    canvas.drawPath(path_0, paint0Fill);
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final scale = _scale;
+    final canvas = context.canvas..save();
+
+    final dx = (size.width - Circle.svgSize.width * scale) / 2;
+    final dy = (size.height - Circle.svgSize.height * scale) / 2;
+
+    canvas
+      ..translate(offset.dx + dx, offset.dy + dy)
+      ..scale(scale, scale);
+
+    if (_colorFilter != null) {
+      canvas.saveLayer(null, Paint()..colorFilter = _colorFilter);
+    }
+
+    canvas.drawPicture(_picture);
+
+    if (_colorFilter != null) {
+      canvas.restore();
+    }
 
     canvas.restore();
   }
 
-  @override
-  bool shouldRepaint(covariant CirclePainter oldDelegate) {
-    return oldDelegate.colorFilter != colorFilter;
-  }
+  static final ui.Picture _picture = () {
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
+    const size = Circle.svgSize;
+
+    final paint0Fill = Paint()
+      ..isAntiAlias = true
+      ..style = PaintingStyle.fill;
+    paint0Fill.color = const Color(0xffff0000);
+    paint0Fill.blendMode = BlendMode.srcOver;
+
+    final path_0 = Path()
+      ..moveTo(size.width * 0.5, size.height * 0)
+      ..cubicTo(
+        size.width * 0.776,
+        size.height * 0,
+        size.width * 1,
+        size.height * 0.224,
+        size.width * 1,
+        size.height * 0.5,
+      )
+      ..cubicTo(
+        size.width * 1,
+        size.height * 0.776,
+        size.width * 0.776,
+        size.height * 1,
+        size.width * 0.5,
+        size.height * 1,
+      )
+      ..cubicTo(
+        size.width * 0.224,
+        size.height * 1,
+        size.width * 0,
+        size.height * 0.776,
+        size.width * 0,
+        size.height * 0.5,
+      )
+      ..cubicTo(
+        size.width * 0,
+        size.height * 0.224,
+        size.width * 0.224,
+        size.height * 0,
+        size.width * 0.5,
+        size.height * 0,
+      )
+      ..close();
+
+    canvas.drawPath(path_0, paint0Fill);
+
+    return recorder.endRecording();
+  }();
 }
