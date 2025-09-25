@@ -7,7 +7,7 @@ import 'package:vector_graphics_codec/vector_graphics_codec.dart';
 import 'package:vector_graphics_compiler/vector_graphics_compiler.dart';
 
 @internal
-class CustomPainterGenerator implements VectorGraphicsCodecListener {
+class CodeGenerator implements VectorGraphicsCodecListener {
   final StringBuffer _definitions = StringBuffer();
   final StringBuffer _drawCommands = StringBuffer();
 

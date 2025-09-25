@@ -3,19 +3,14 @@ import 'dart:io' as io;
 
 import 'package:args/args.dart';
 import 'package:path/path.dart' as p;
-import 'package:svg2dart/src/generate.dart';
+import 'package:svg2dart/generator.dart';
+import 'package:vector_graphics_compiler/vector_graphics_compiler.dart'
+    show
+        initializePathOpsFromFlutterCache,
+        initializeTessellatorFromFlutterCache;
 
 final $log = io.stdout.writeln; // Log to stdout
 final $err = io.stderr.writeln; // Log to stderr
-
-Future<void> _format(String path) async {
-  $log('Formatting $path...');
-  final result = await io.Process.run('dart', ['format', path]);
-  if (result.exitCode != 0) {
-    // Don't exit, just warn.
-    $err('Could not format $path. Error: ${result.stderr}');
-  }
-}
 
 Future<void> _fix(String path) async {
   $log('Applying fixes to $path...');
@@ -37,6 +32,13 @@ void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
               abbr: 'o',
               help: 'Path to the output Dart file or directory.',
               mandatory: true)
+          ..addFlag(
+            'optimizations',
+            aliases: ['opt'],
+            help:
+                'Enable optimizations (e.g., path simplification, masking, overdraw).',
+            defaultsTo: false,
+          )
           ..addFlag('help',
               abbr: 'h', negatable: false, help: 'Show this help message.');
 
@@ -55,8 +57,14 @@ void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
           io.exit(0);
         }
 
+        final enableOptimizations = argResults['optimizations'] != false;
         final inputPath = argResults['input'] as String;
         final outputPath = argResults['output'] as String;
+
+        if (enableOptimizations) {
+          initializePathOpsFromFlutterCache();
+          initializeTessellatorFromFlutterCache();
+        }
 
         final inputType = io.FileSystemEntity.typeSync(inputPath);
 
@@ -73,7 +81,6 @@ void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
           }
           $log('Start parsing file $inputPath...');
           await generateWidgets(inputPath, outputPath);
-          await _format(outputPath);
           await _fix(outputPath);
           $log('Finished conversion.');
         } else if (inputType == io.FileSystemEntityType.directory) {
@@ -96,7 +103,6 @@ void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
                 p.join(outputPath, relativePath.replaceAll('-', '_')), '.dart');
             await generateWidgets(svgFile.path, outputFilePath);
           }
-          await _format(outputPath);
           await _fix(outputPath);
           $log('Finished conversion of all SVG files.');
         }
