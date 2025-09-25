@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.4
+
+* The code generator has been completely rewritten to produce widgets based on `LeafRenderObjectWidget` and a pre-recorded `ui.Picture`.
+* Generated widgets now accept `width` and `height` parameters for direct sizing, similar to `flutter_svg`.
+* The generator now detects and skips SVG files that contain `<image>` tags, as raster images are not supported.
+* Updated package description and `README.md` to reflect the new architecture.
+
 ## 0.0.3
 * Add support for build_runner
 

@@ -1,13 +1,13 @@
- # SVG to Dart CustomPainter Converter (`svg2dart`)
+ # SVG to Dart Widget Converter (`svg2dart`)
 
-`svg2dart` is a command-line tool that converts SVG files into pure Dart code. It generates Flutter `StatelessWidget`s that use `CustomPainter` to render the vector graphics.
+`svg2dart` is a command-line tool that converts SVG files into pure Dart code. It generates performant Flutter widgets that use `LeafRenderObjectWidget` and a pre-recorded `ui.Picture` for rendering.
 
 This approach allows you to use your vector graphics directly in your Flutter application without runtime dependencies like `flutter_svg`, which can lead to better performance and a smaller dependency tree.
 
 ## Features
 
 - Converts SVG paths, fills, strokes, and basic gradients.
-- Generates a self-contained `StatelessWidget` for each SVG.
+- Generates a self-contained, high-performance `LeafRenderObjectWidget` for each SVG.
 - Supports processing a single SVG file or an entire directory of SVGs.
 - Preserves the source directory structure in the output directory.
 
@@ -42,22 +42,58 @@ svg2dart [options]
 To convert a single SVG file into a Dart widget:
 
 ```bash
-dart run svg2dart --input assets/icons/cloud.svg --output lib/icons/cloud_icon.dart
-```
+svg2dart --input assets/icons/cloud.svg --output lib/icons/cloud.dart
+``` 
 
-This command will read `assets/icons/cloud.svg` and generate a `CloudIcon` widget inside `lib/icons/cloud_icon.dart`.
+This command will read `assets/icons/cloud.svg` and generate a `Cloud` widget inside `lib/icons/cloud.dart`.
 
 #### 2. Converting an Entire Directory
 
 To convert all `.svg` files within a directory (and its subdirectories):
 
 ```bash
-dart run svg2dart --input assets/icons/ --output lib/generated/icons/
+svg2dart --input assets/icons/ --output lib/generated/icons/
 ```
 
-This command will scan the `assets/icons/` directory recursively. For each `.svg` file found, it will create a corresponding `.dart` file in `lib/generated/icons/`, preserving the original folder structure.
+## Alternative: Usage with `build_runner`
 
-For example, `assets/icons/user/profile.svg` will be converted to `lib/generated/icons/user/profile.dart`.
+For automatic code generation that integrates with your development workflow, you can use `svg2dart` as a builder.
+
+1.  **Add dependencies** to your project's `pubspec.yaml`:
+
+    ```yaml
+    dev_dependencies:
+      build_runner: ^2.4.0 # or latest
+      svg2dart: ^0.0.4 # or latest
+    ```
+
+2.  **Run the builder**:
+
+    To generate the Dart files once:
+    ```bash
+    dart run build_runner build --delete-conflicting-outputs
+    ```
+    To watch for file changes and regenerate automatically:
+    ```bash
+    dart run build_runner watch --delete-conflicting-outputs
+    ```
+
+By default, the builder processes `.svg` files from the `assets/svg` directory and places the generated `.dart` files into `lib/generated/svg`. You can customize these paths by creating a `build.yaml` file in your project's root.
+
+Here is an example of a `build.yaml` file that changes the default input and output directories:
+
+```yaml
+targets:
+  $default:
+    builders:
+      svg2dart:
+        options:
+          # Default is "assets/svg"
+          input: "assets/my_icons"
+          # Default is "lib/generated/svg"
+          output: "lib/my_generated_icons"
+```
+```
 
 ## Using the Generated Widget
 

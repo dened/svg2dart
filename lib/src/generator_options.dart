@@ -14,7 +14,7 @@ class GeneratorOptions {
 
     return GeneratorOptions(
       input: map['input'] as String? ?? 'assets/svg',
-      output: map['output'] as String? ?? 'assets/svg',
+      output: map['output'] as String? ?? 'lib/generated/svg',
     );
   }
 
