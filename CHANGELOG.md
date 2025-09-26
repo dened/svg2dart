@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.0.6
 * FIX: Ensure generated widgets properly clip their content to the specified width and height, preventing overflow issues.
 
 ## 0.0.5
