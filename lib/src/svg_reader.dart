@@ -8,12 +8,13 @@ import 'package:vector_graphics_codec/vector_graphics_codec.dart'
 import 'package:vector_graphics_compiler/vector_graphics_compiler.dart';
 
 /// Generates a Dart CustomPainter widget from the given SVG content.
-Future<void> generateWidgets(
-    String inputFilePath, String outputFilePath) async {
+Future<void> generateWidgets(String inputFilePath, String outputFilePath,
+    {OutputClassType convertTo = OutputClassType.record}) async {
   final svgContent = File(inputFilePath).readAsStringSync();
 
   final assetFilename = p.basenameWithoutExtension(inputFilePath);
-  final generatedCode = generateFromContent(svgContent, assetFilename);
+  final generatedCode =
+      generateFromContent(svgContent, assetFilename, convertTo: convertTo);
 
   // Create the output directory if it doesn't exist.
   final outputDir = p.dirname(outputFilePath);
@@ -24,20 +25,19 @@ Future<void> generateWidgets(
 }
 
 ///
-String generateFromContent(
-  String svgContent,
-  String assetFilename,
-) {
+String generateFromContent(String svgContent, String assetFilename,
+    {OutputClassType convertTo = OutputClassType.record,
+    bool enableOptimizations = false}) {
   final bytes = encodeSvg(
     xml: svgContent,
     debugName: 'Svg loader',
-    enableClippingOptimizer: false,
-    enableMaskingOptimizer: false,
-    enableOverdrawOptimizer: false,
+    enableClippingOptimizer: enableOptimizations,
+    enableMaskingOptimizer: enableOptimizations,
+    enableOverdrawOptimizer: enableOptimizations,
   );
 
   const codec = VectorGraphicsCodec();
-  final generator = CodeGenerator();
+  final generator = CodeGenerator(classType: convertTo);
   final response = codec.decode(
     bytes.buffer.asByteData(),
     generator,

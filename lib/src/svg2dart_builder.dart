@@ -26,7 +26,12 @@ class Svg2DartBuilder implements Builder {
     final assetId = buildStep.inputId;
     final svgContent = await buildStep.readAsString(assetId);
     final assetFilename = p.basenameWithoutExtension(assetId.path);
-    final generatedCode = generateFromContent(svgContent, assetFilename);
+    final generatedCode = generateFromContent(
+      svgContent,
+      assetFilename,
+      convertTo: _options.convertTo,
+      enableOptimizations: _options.optimizations,
+    );
 
     final relativePath = p.relative(assetId.path, from: _options.input);
     final baseOutputPath = p.withoutExtension(relativePath);

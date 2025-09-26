@@ -12,9 +12,10 @@
             "program": "bin/svg2dart.dart",
             "args": [
                 "-i",
-                "D:/dev/svg2dart/example/assets/svg/circle.svg",
+                "assets/svg/generated.svg",
                 "-o",
-                "D:/dev/svg2dart/example/lib/generated/icons/circle.dart"
+                "lib/generated/icons/generated.dart",
+                "--opt"
             ]
         }
     ]

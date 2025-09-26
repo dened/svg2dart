@@ -4,16 +4,17 @@ import 'dart:io' as io;
 import 'package:args/args.dart';
 import 'package:path/path.dart' as p;
 import 'package:svg2dart/generator.dart';
+import 'package:svg2dart/src/code_generator.dart';
 import 'package:vector_graphics_compiler/vector_graphics_compiler.dart'
     show
         initializePathOpsFromFlutterCache,
         initializeTessellatorFromFlutterCache;
 
-final $log = io.stdout.writeln; // Log to stdout
+final $info = io.stdout.writeln; // Log to stdout
 final $err = io.stderr.writeln; // Log to stderr
 
 Future<void> _fix(String path) async {
-  $log('Applying fixes to $path...');
+  $info('Applying fixes to $path...');
   final result = await io.Process.run('dart', ['fix', '--apply', path]);
   if (result.exitCode != 0) {
     // Don't exit, just warn.
@@ -32,6 +33,14 @@ void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
               abbr: 'o',
               help: 'Path to the output Dart file or directory.',
               mandatory: true)
+          ..addOption(
+            'convertTo',
+            abbr: 'c',
+            allowed: ['record', 'customPainter', 'renderBox'],
+            defaultsTo: 'record',
+            help:
+                'The type of class to generate (record, customPainter, or renderBox).',
+          )
           ..addFlag(
             'optimizations',
             aliases: ['opt'],
@@ -52,14 +61,18 @@ void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
         }
 
         if (argResults['help'] as bool) {
-          $log('A tool to convert SVG files to Flutter CustomPainters.');
-          $log(parser.usage);
+          $info('A tool to convert SVG files to Flutter CustomPainters.');
+          $info(parser.usage);
           io.exit(0);
         }
 
         final enableOptimizations = argResults['optimizations'] != false;
         final inputPath = argResults['input'] as String;
         final outputPath = argResults['output'] as String;
+        final convertTo =
+            OutputClassType.fromString(argResults['convertTo'] as String);
+
+        _printSettings(inputPath, outputPath, convertTo, enableOptimizations);
 
         if (enableOptimizations) {
           initializePathOpsFromFlutterCache();
@@ -79,10 +92,10 @@ void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
                 'Error: When input is a file, output must be a file path (e.g., path/to/file.dart).');
             io.exit(1);
           }
-          $log('Start parsing file $inputPath...');
-          await generateWidgets(inputPath, outputPath);
+          $info('Start parsing file $inputPath...');
+          await generateWidgets(inputPath, outputPath, convertTo: convertTo);
           await _fix(outputPath);
-          $log('Finished conversion.');
+          $info('Finished conversion.');
         } else if (inputType == io.FileSystemEntityType.directory) {
           if (p.extension(outputPath) != '') {
             $err('When input is a directory, output must also be a directory.');
@@ -94,17 +107,18 @@ void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
               .whereType<io.File>()
               .where((file) => p.extension(file.path) == '.svg');
 
-          $log('Found ${svgFiles.length} SVG files in $inputPath.');
-          $log('Starting conversion...');
+          $info('Found ${svgFiles.length} SVG files in $inputPath.');
+          $info('Starting conversion...');
 
           for (final svgFile in svgFiles) {
             final relativePath = p.relative(svgFile.path, from: inputPath);
             final outputFilePath = p.setExtension(
                 p.join(outputPath, relativePath.replaceAll('-', '_')), '.dart');
-            await generateWidgets(svgFile.path, outputFilePath);
+            await generateWidgets(svgFile.path, outputFilePath,
+                convertTo: convertTo);
           }
           await _fix(outputPath);
-          $log('Finished conversion of all SVG files.');
+          $info('Finished conversion of all SVG files.');
         }
       },
       (error, stackTrace) {
@@ -113,3 +127,17 @@ void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
         io.exit(1);
       },
     );
+
+void _printSettings(
+  String input,
+  String output,
+  OutputClassType convertTo,
+  bool opt,
+) {
+  $info('=================================================');
+  $info('Input directory (-i):       $input');
+  $info('Output directory (-o):      $output');
+  $info('Convert to (-c):            $convertTo');
+  $info('Optimizations (--opt):      $opt');
+  $info('=================================================\n');
+}

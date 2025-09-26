@@ -1,6 +1,7 @@
 import 'package:example/generated/icons/circle.dart';
 import 'package:example/generated/icons/cloud.dart';
 import 'package:example/generated/icons/fire.dart';
+import 'package:example/generated/icons/generated.dart';
 import 'package:example/generated/icons/gift.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -114,6 +115,15 @@ class MyHomePage extends StatelessWidget {
                 Expanded(child: Gift(colorFilter: colorFilter)),
               ],
             ),
+
+            Row(
+              children: [
+                Expanded(child: SvgPicture.asset('assets/svg/generated.svg')),
+                Expanded(child: Generated()),
+              ],
+            ),
+
+            SizedBox(height: 48),
           ],
         ),
       ),

@@ -12,6 +12,19 @@
         "isDefault": true
       },
       "problemMatcher": []
+    },
+    {
+      "label": "Build Runner",
+      "type": "shell",
+      "command": [
+        "dart run build_runner build --delete-conflicting-outputs"
+      ],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
     }
+    
   ]
 }
