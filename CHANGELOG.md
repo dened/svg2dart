@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.0.5
+
+*   Added the ability to generate three types of classes for rendering, selectable with the `convertTo` option:
+    *   `customPainter`: Renders the SVG using a `CustomPainter`.
+    *   `record`: Pre-records the SVG into a `ui.Picture` for optimized performance.
+    *   `renderBox`: Renders the SVG directly within a `LeafRenderObjectWidget`.
+*   Added a new `optimizations` flag. When enabled, it uses `pathops` for path simplification and
+    `Tessellator` to convert paths into vertices for direct GPU rendering, which can significantly improve performance.
+
 ## 0.0.4
 
 * The code generator has been completely rewritten to produce widgets based on `LeafRenderObjectWidget` and a pre-recorded `ui.Picture`.
