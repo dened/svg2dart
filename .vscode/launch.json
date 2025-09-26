@@ -4,7 +4,6 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-    
         {
             "name": "svg2dart: convert circle",
             "request": "launch",
@@ -17,6 +16,13 @@
                 "lib/generated/icons/generated.dart",
                 "--opt"
             ]
+        },
+        // dart --enable-vm-service --pause-isolates-on-start run build_runner build --verbose
+        {
+            "name": "Attach to Builder",
+            "request": "attach",
+            "type": "dart",
+            "vmServiceUri": "http://127.0.0.1:8181/30HoXhEgIfY=/" // The Dart VM service is listening on <<< URL
         }
     ]
 }

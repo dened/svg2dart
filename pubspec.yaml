@@ -1,5 +1,5 @@
 name: svg2dart
-description: A command-line tool to convert SVG files into pure Dart code for Flutter, generating performant widgets that use LeafRenderObjectWidget for rendering.
+description: A command-line tool to convert SVG files into pure Dart code for Flutter.
 version: 0.0.5
 homepage: https://github.com/dened/svg2dart 
 repository: https://github.com/dened/svg2dart
@@ -38,5 +38,7 @@ dependencies:
 
 dev_dependencies:
   build_runner: ^2.8.0 
+  build_test: ^3.4.0 
   lints: ^6.0.0 
   test: ^1.26.3
+

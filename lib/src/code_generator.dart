@@ -212,7 +212,7 @@ class ${widgetName}RenderObject extends RenderBox {
 
     canvas
       ..translate(offset.dx + dx, offset.dy + dy)
-      ..clipRect(Offset.zero & $widgetName.svgSize)
+      ..clipRect(Offset.zero & size)
       ..scale(scale, scale);
 
     canvas.drawPicture(_painter.getPicture(_colorFilter));
@@ -362,7 +362,7 @@ class ${widgetName}RenderObject extends RenderBox {
 
     canvas
       ..translate(offset.dx + dx, offset.dy + dy)
-      ..clipRect(Offset.zero & $widgetName.svgSize)
+      ..clipRect(Offset.zero & size)
       ..scale(scale, scale);
 
 ${_definitions.toString().replaceAll('const size = $widgetName.svgSize;', 'final size = $widgetName.svgSize;')}
@@ -431,7 +431,7 @@ class $painterName extends CustomPainter {
     final dy = (size.height - $widgetName.svgSize.height * scale) / 2;
     canvas
       ..translate(dx, dy)
-      ..clipRect(Offset.zero & $widgetName.svgSize)
+      ..clipRect(Offset.zero & size)
       ..scale(scale);
 
 ${_definitions.toString()}

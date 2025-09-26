@@ -2,12 +2,13 @@
 
 import 'dart:math';
 import 'dart:ui' as ui;
+import 'dart:typed_data';
 import 'package:flutter/widgets.dart';
 
 /// {@template Fire}
 /// Fire widget.
 /// {@endtemplate}
-class Fire extends LeafRenderObjectWidget {
+class Fire extends StatelessWidget {
   /// {@macro Fire}
   const Fire({super.key, this.width, this.height, this.colorFilter});
 
@@ -18,1134 +19,273 @@ class Fire extends LeafRenderObjectWidget {
   static const Size svgSize = Size(512, 512);
 
   @override
-  RenderObject createRenderObject(BuildContext context) => FireRenderObject()
-    ..width = width
-    ..height = height
-    ..colorFilter = colorFilter;
-
-  @override
-  void updateRenderObject(BuildContext context, FireRenderObject renderObject) {
-    renderObject
-      ..width = width
-      ..height = height
-      ..colorFilter = colorFilter;
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: width,
+      height: height,
+      child: CustomPaint(
+        painter: FirePainter(colorFilter: colorFilter),
+        size: svgSize,
+      ),
+    );
   }
 }
 
-class FireRenderObject extends RenderBox {
-  FireRenderObject();
+/// {@template FirePainter}
+/// Custom painter for [Fire].
+/// {@endtemplate}
+class FirePainter extends CustomPainter {
+  /// {@macro FirePainter}
+  const FirePainter({ui.ColorFilter? colorFilter}) : _colorFilter = colorFilter;
 
-  ui.ColorFilter? _colorFilter;
-  double? _width;
-  double? _height;
-
-  set width(double? value) {
-    if (_width == value) {
-      return;
-    }
-    _width = value;
-    markNeedsLayout();
-  }
-
-  set height(double? value) {
-    if (_height == value) {
-      return;
-    }
-    _height = value;
-    markNeedsLayout();
-  }
-
-  set colorFilter(ui.ColorFilter? value) {
-    if (_colorFilter == value) {
-      return;
-    }
-    _colorFilter = value;
-    markNeedsPaint();
-  }
-
-  double _scale = 1.0;
+  final ui.ColorFilter? _colorFilter;
 
   @override
-  bool get isRepaintBoundary => false;
-
-  @override
-  bool get sizedByParent => false;
-
-  @override
-  Size computeDryLayout(BoxConstraints constraints) {
-    final desiredWidth = _width ?? Fire.svgSize.width;
-    final desiredHeight = _height ?? Fire.svgSize.height;
-    final desiredSize = Size(desiredWidth, desiredHeight);
-    return constraints.constrain(desiredSize);
-  }
-
-  @override
-  void performLayout() {
-    size = computeDryLayout(constraints);
-    if (Fire.svgSize.width == 0 || Fire.svgSize.height == 0) {
-      _scale = 1.0;
-      return;
-    }
-    _scale = min(
+  void paint(Canvas canvas, Size size) {
+    final scale = min(
       size.width / Fire.svgSize.width,
       size.height / Fire.svgSize.height,
     );
-  }
 
-  @override
-  bool hitTestSelf(Offset position) => true;
-
-  @override
-  void paint(PaintingContext context, Offset offset) {
-    final scale = _scale;
-    final canvas = context.canvas..save();
-
+    canvas.save();
     final dx = (size.width - Fire.svgSize.width * scale) / 2;
     final dy = (size.height - Fire.svgSize.height * scale) / 2;
-
     canvas
-      ..translate(offset.dx + dx, offset.dy + dy)
-      ..scale(scale, scale);
-
-    if (_colorFilter != null) {
-      canvas.saveLayer(null, Paint()..colorFilter = _colorFilter);
-    }
-
-    canvas.drawPicture(_picture);
-
-    if (_colorFilter != null) {
-      canvas.restore();
-    }
-
-    canvas.restore();
-  }
-
-  static final ui.Picture _picture = () {
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
-    const size = Fire.svgSize;
+      ..translate(dx, dy)
+      ..clipRect(Offset.zero & size)
+      ..scale(scale);
 
     final paint0Fill = Paint()
       ..isAntiAlias = true
       ..style = PaintingStyle.fill;
     paint0Fill.color = const Color(0xffed694a);
+    paint0Fill.colorFilter = _colorFilter;
     paint0Fill.blendMode = BlendMode.srcOver;
 
     final paint1Fill = Paint()
       ..isAntiAlias = true
       ..style = PaintingStyle.fill;
     paint1Fill.color = const Color(0xffd8553a);
+    paint1Fill.colorFilter = _colorFilter;
     paint1Fill.blendMode = BlendMode.srcOver;
 
     final paint2Fill = Paint()
       ..isAntiAlias = true
       ..style = PaintingStyle.fill;
     paint2Fill.color = const Color(0xfff4a32c);
+    paint2Fill.colorFilter = _colorFilter;
     paint2Fill.blendMode = BlendMode.srcOver;
 
     final paint3Fill = Paint()
       ..isAntiAlias = true
       ..style = PaintingStyle.fill;
     paint3Fill.color = const Color(0xffe89528);
+    paint3Fill.colorFilter = _colorFilter;
     paint3Fill.blendMode = BlendMode.srcOver;
 
     final paint4Fill = Paint()
       ..isAntiAlias = true
       ..style = PaintingStyle.fill;
     paint4Fill.color = const Color(0xfff4d44e);
+    paint4Fill.colorFilter = _colorFilter;
     paint4Fill.blendMode = BlendMode.srcOver;
 
     final paint5Fill = Paint()
       ..isAntiAlias = true
       ..style = PaintingStyle.fill;
     paint5Fill.color = const Color(0xffeae9e8);
+    paint5Fill.colorFilter = _colorFilter;
     paint5Fill.blendMode = BlendMode.srcOver;
 
     final paint6Fill = Paint()
       ..isAntiAlias = true
       ..style = PaintingStyle.fill;
     paint6Fill.color = const Color(0xfff7e7a1);
+    paint6Fill.colorFilter = _colorFilter;
     paint6Fill.blendMode = BlendMode.srcOver;
 
     final paint7Fill = Paint()
       ..isAntiAlias = true
       ..style = PaintingStyle.fill;
     paint7Fill.color = const Color(0xffe8c842);
+    paint7Fill.colorFilter = _colorFilter;
     paint7Fill.blendMode = BlendMode.srcOver;
 
     final path_0 = Path()
-      ..moveTo(size.width * 0.7295, size.height * 0.3199)
-      ..cubicTo(
-        size.width * 0.7087,
-        size.height * 0.2972,
-        size.width * 0.6763,
-        size.height * 0.2665,
-        size.width * 0.6625,
-        size.height * 0.3358,
-      )
-      ..cubicTo(
-        size.width * 0.6578,
-        size.height * 0.3594,
-        size.width * 0.6468,
-        size.height * 0.3776,
-        size.width * 0.6374,
-        size.height * 0.3922,
-      )
-      ..cubicTo(
-        size.width * 0.6273,
-        size.height * 0.341,
-        size.width * 0.5969,
-        size.height * 0.288,
-        size.width * 0.5682,
-        size.height * 0.2523,
-      )
-      ..cubicTo(
-        size.width * 0.5575,
-        size.height * 0.2389,
-        size.width * 0.5194,
-        size.height * 0.1858,
-        size.width * 0.5121,
-        size.height * 0.0969,
-      )
-      ..cubicTo(
-        size.width * 0.511,
-        size.height * 0.0836,
-        size.width * 0.4952,
-        size.height * 0.0774,
-        size.width * 0.4854,
-        size.height * 0.0863,
-      )
-      ..cubicTo(
-        size.width * 0.3912,
-        size.height * 0.1718,
-        size.width * 0.3395,
-        size.height * 0.2895,
-        size.width * 0.3376,
-        size.height * 0.4219,
-      )
-      ..cubicTo(
-        size.width * 0.3376,
-        size.height * 0.4219,
-        size.width * 0.2983,
-        size.height * 0.3888,
-        size.width * 0.277,
-        size.height * 0.3273,
-      )
-      ..cubicTo(
-        size.width * 0.2713,
-        size.height * 0.3107,
-        size.width * 0.2491,
-        size.height * 0.3076,
-        size.width * 0.2394,
-        size.height * 0.3222,
-      )
-      ..cubicTo(
-        size.width * 0.2376,
-        size.height * 0.325,
-        size.width * 0.2359,
-        size.height * 0.3278,
-        size.width * 0.2343,
-        size.height * 0.3306,
-      )
-      ..cubicTo(
-        size.width * 0.1617,
-        size.height * 0.4591,
-        size.width * 0.1267,
-        size.height * 0.6152,
-        size.width * 0.159,
-        size.height * 0.7604,
-      )
-      ..cubicTo(
-        size.width * 0.2131,
-        size.height * 1.0035,
-        size.width * 0.5705,
-        size.height * 1.0715,
-        size.width * 0.7598,
-        size.height * 0.9187,
-      )
-      ..cubicTo(
-        size.width * 0.945,
-        size.height * 0.7691,
-        size.width * 0.8861,
-        size.height * 0.4908,
-        size.width * 0.7295,
-        size.height * 0.3199,
-      )
+      ..moveTo(373.499, 163.809)
+      ..cubicTo(362.829, 152.16, 346.241, 136.437, 339.184, 171.939)
+      ..cubicTo(336.784, 184.01, 331.177, 193.315, 326.372, 200.807)
+      ..cubicTo(321.193, 174.595, 305.611, 147.464, 290.929, 129.171)
+      ..cubicTo(285.435, 122.327, 265.941, 95.12, 262.196, 49.604)
+      ..cubicTo(261.637, 42.811, 253.568, 39.621, 248.521, 44.203)
+      ..cubicTo(200.289, 87.987, 173.815, 148.205, 172.832, 215.998)
+      ..cubicTo(172.832, 215.998, 152.748, 199.069, 141.837, 167.575)
+      ..cubicTo(138.899, 159.094, 127.529, 157.476, 122.596, 164.975)
+      ..cubicTo(121.649, 166.415, 120.771, 167.857, 119.979, 169.257)
+      ..cubicTo(82.766, 235.057, 64.865, 314.962, 81.414, 389.302)
+      ..cubicTo(109.084, 513.799, 292.118, 548.605, 389.017, 470.356)
+      ..cubicTo(483.822, 393.8, 453.686, 251.311, 373.499, 163.809)
       ..close();
 
     final path_1 = Path()
-      ..moveTo(size.width * 0.2093, size.height * 0.7756)
-      ..cubicTo(
-        size.width * 0.1774,
-        size.height * 0.6289,
-        size.width * 0.2112,
-        size.height * 0.4713,
-        size.width * 0.2822,
-        size.height * 0.3408,
-      )
-      ..cubicTo(
-        size.width * 0.2804,
-        size.height * 0.3364,
-        size.width * 0.2786,
-        size.height * 0.332,
-        size.width * 0.277,
-        size.height * 0.3273,
-      )
-      ..cubicTo(
-        size.width * 0.2713,
-        size.height * 0.3107,
-        size.width * 0.2491,
-        size.height * 0.3076,
-        size.width * 0.2394,
-        size.height * 0.3222,
-      )
-      ..cubicTo(
-        size.width * 0.2376,
-        size.height * 0.325,
-        size.width * 0.2359,
-        size.height * 0.3278,
-        size.width * 0.2343,
-        size.height * 0.3306,
-      )
-      ..cubicTo(
-        size.width * 0.1617,
-        size.height * 0.4591,
-        size.width * 0.1267,
-        size.height * 0.6152,
-        size.width * 0.159,
-        size.height * 0.7604,
-      )
-      ..cubicTo(
-        size.width * 0.1837,
-        size.height * 0.8713,
-        size.width * 0.2715,
-        size.height * 0.9457,
-        size.width * 0.3776,
-        size.height * 0.9794,
-      )
-      ..cubicTo(
-        size.width * 0.2948,
-        size.height * 0.9393,
-        size.width * 0.2299,
-        size.height * 0.8705,
-        size.width * 0.2093,
-        size.height * 0.7756,
-      )
+      ..moveTo(107.171, 397.118)
+      ..cubicTo(90.814, 321.983, 108.128, 241.3, 144.467, 174.47)
+      ..cubicTo(143.548, 172.253, 142.664, 169.96, 141.838, 167.576)
+      ..cubicTo(138.9, 159.095, 127.53, 157.477, 122.597, 164.976)
+      ..cubicTo(121.65, 166.416, 120.773, 167.858, 119.981, 169.258)
+      ..cubicTo(82.768, 235.058, 64.867, 314.963, 81.416, 389.303)
+      ..cubicTo(94.037, 446.089, 138.985, 484.203, 193.336, 501.452)
+      ..cubicTo(150.936, 480.913, 117.732, 445.704, 107.171, 397.118)
       ..close();
 
     final path_2 = Path()
-      ..moveTo(size.width * 0.3881, size.height * 0.4194)
-      ..cubicTo(
-        size.width * 0.392,
-        size.height * 0.2993,
-        size.width * 0.4355,
-        size.height * 0.1915,
-        size.width * 0.5133,
-        size.height * 0.1087,
-      )
-      ..cubicTo(
-        size.width * 0.5128,
-        size.height * 0.1042,
-        size.width * 0.5124,
-        size.height * 0.1001,
-        size.width * 0.5121,
-        size.height * 0.097,
-      )
-      ..cubicTo(
-        size.width * 0.511,
-        size.height * 0.0836,
-        size.width * 0.4958,
-        size.height * 0.0769,
-        size.width * 0.486,
-        size.height * 0.0858,
-      )
-      ..cubicTo(
-        size.width * 0.395,
-        size.height * 0.168,
-        size.width * 0.3396,
-        size.height * 0.2845,
-        size.width * 0.3376,
-        size.height * 0.4219,
-      )
-      ..lineTo(size.width * 0.3546, size.height * 0.4351)
-      ..cubicTo(
-        size.width * 0.363,
-        size.height * 0.4416,
-        size.width * 0.3743,
-        size.height * 0.4413,
-        size.width * 0.3824,
-        size.height * 0.4354,
-      )
-      ..cubicTo(
-        size.width * 0.3871,
-        size.height * 0.4313,
-        size.width * 0.3878,
-        size.height * 0.4252,
-        size.width * 0.3881,
-        size.height * 0.4194,
-      )
+      ..moveTo(198.716, 214.75)
+      ..cubicTo(200.725, 153.223, 222.979, 98.053, 262.809, 55.671)
+      ..cubicTo(262.535, 53.337, 262.332, 51.25, 262.201, 49.666)
+      ..cubicTo(261.63, 42.815, 253.856, 39.379, 248.831, 43.921)
+      ..cubicTo(202.246, 86.039, 173.852, 145.648, 172.833, 215.996)
+      ..lineTo(181.552, 222.767)
+      ..cubicTo(185.846, 226.102, 191.664, 225.957, 195.765, 222.902)
+      ..cubicTo(198.212, 220.828, 198.563, 217.698, 198.716, 214.75)
       ..close();
 
     final path_3 = Path()
-      ..moveTo(size.width * 0.6723, size.height * 0.4977)
-      ..cubicTo(
-        size.width * 0.657,
-        size.height * 0.4809,
-        size.width * 0.633,
-        size.height * 0.4582,
-        size.width * 0.6228,
-        size.height * 0.5094,
-      )
-      ..cubicTo(
-        size.width * 0.6194,
-        size.height * 0.5268,
-        size.width * 0.6113,
-        size.height * 0.5403,
-        size.width * 0.6044,
-        size.height * 0.5511,
-      )
-      ..cubicTo(
-        size.width * 0.5969,
-        size.height * 0.5133,
-        size.width * 0.5744,
-        size.height * 0.4741,
-        size.width * 0.5532,
-        size.height * 0.4477,
-      )
-      ..cubicTo(
-        size.width * 0.5453,
-        size.height * 0.4378,
-        size.width * 0.5172,
-        size.height * 0.3986,
-        size.width * 0.5118,
-        size.height * 0.3329,
-      )
-      ..cubicTo(
-        size.width * 0.511,
-        size.height * 0.3231,
-        size.width * 0.4993,
-        size.height * 0.3185,
-        size.width * 0.4921,
-        size.height * 0.3251,
-      )
-      ..cubicTo(
-        size.width * 0.4225,
-        size.height * 0.3883,
-        size.width * 0.3843,
-        size.height * 0.4752,
-        size.width * 0.3829,
-        size.height * 0.573,
-      )
-      ..cubicTo(
-        size.width * 0.3829,
-        size.height * 0.573,
-        size.width * 0.3539,
-        size.height * 0.5486,
-        size.width * 0.3382,
-        size.height * 0.5031,
-      )
-      ..cubicTo(
-        size.width * 0.3339,
-        size.height * 0.4909,
-        size.width * 0.3175,
-        size.height * 0.4886,
-        size.width * 0.3104,
-        size.height * 0.4994,
-      )
-      ..cubicTo(
-        size.width * 0.309,
-        size.height * 0.5014,
-        size.width * 0.3078,
-        size.height * 0.5035,
-        size.width * 0.3066,
-        size.height * 0.5056,
-      )
-      ..cubicTo(
-        size.width * 0.2529,
-        size.height * 0.6005,
-        size.width * 0.2271,
-        size.height * 0.7157,
-        size.width * 0.251,
-        size.height * 0.823,
-      )
-      ..cubicTo(
-        size.width * 0.2909,
-        size.height * 1.0026,
-        size.width * 0.5549,
-        size.height * 1.0528,
-        size.width * 0.6947,
-        size.height * 0.9399,
-      )
-      ..cubicTo(
-        size.width * 0.8315,
-        size.height * 0.8295,
-        size.width * 0.788,
-        size.height * 0.6239,
-        size.width * 0.6723,
-        size.height * 0.4977,
-      )
+      ..moveTo(344.242, 254.818)
+      ..cubicTo(336.362, 246.214, 324.109, 234.6, 318.897, 260.823)
+      ..cubicTo(317.125, 269.738, 312.982, 276.612, 309.435, 282.146)
+      ..cubicTo(305.61, 262.785, 294.1, 242.745, 283.256, 229.234)
+      ..cubicTo(279.198, 224.179, 264.8, 204.084, 262.033, 170.463)
+      ..cubicTo(261.62, 165.445, 255.661, 163.09, 251.933, 166.474)
+      ..cubicTo(216.308, 198.813, 196.753, 243.293, 196.028, 293.365)
+      ..cubicTo(196.028, 293.365, 181.193, 280.861, 173.135, 257.599)
+      ..cubicTo(170.965, 251.335, 162.566, 250.14, 158.923, 255.679)
+      ..cubicTo(158.224, 256.742, 157.575, 257.808, 156.99, 258.842)
+      ..cubicTo(129.503, 307.443, 116.281, 366.462, 128.504, 421.372)
+      ..cubicTo(148.942, 513.328, 284.134, 539.037, 355.706, 481.24)
+      ..cubicTo(425.73, 424.695, 403.471, 319.45, 344.242, 254.818)
       ..close();
 
     final path_4 = Path()
-      ..moveTo(size.width * 0.3008, size.height * 0.8371)
-      ..cubicTo(
-        size.width * 0.2796,
-        size.height * 0.7322,
-        size.width * 0.3015,
-        size.height * 0.6198,
-        size.width * 0.3479,
-        size.height * 0.5261,
-      )
-      ..cubicTo(
-        size.width * 0.3444,
-        size.height * 0.5192,
-        size.width * 0.3411,
-        size.height * 0.5115,
-        size.width * 0.3382,
-        size.height * 0.5031,
-      )
-      ..cubicTo(
-        size.width * 0.3339,
-        size.height * 0.4909,
-        size.width * 0.3175,
-        size.height * 0.4886,
-        size.width * 0.3104,
-        size.height * 0.4994,
-      )
-      ..cubicTo(
-        size.width * 0.309,
-        size.height * 0.5014,
-        size.width * 0.3078,
-        size.height * 0.5035,
-        size.width * 0.3066,
-        size.height * 0.5056,
-      )
-      ..cubicTo(
-        size.width * 0.2529,
-        size.height * 0.6005,
-        size.width * 0.2271,
-        size.height * 0.7157,
-        size.width * 0.251,
-        size.height * 0.823,
-      )
-      ..cubicTo(
-        size.width * 0.2695,
-        size.height * 0.9065,
-        size.width * 0.3366,
-        size.height * 0.962,
-        size.width * 0.4171,
-        size.height * 0.9862,
-      )
-      ..cubicTo(
-        size.width * 0.3599,
-        size.height * 0.9575,
-        size.width * 0.3149,
-        size.height * 0.9072,
-        size.width * 0.3008,
-        size.height * 0.8371,
-      )
+      ..moveTo(153.994, 428.585)
+      ..cubicTo(143.172, 374.909, 154.381, 317.314, 178.146, 269.354)
+      ..cubicTo(176.335, 265.808, 174.619, 261.888, 173.133, 257.6)
+      ..cubicTo(170.963, 251.336, 162.564, 250.14, 158.921, 255.679)
+      ..cubicTo(158.222, 256.742, 157.573, 257.808, 156.988, 258.843)
+      ..cubicTo(129.502, 307.444, 116.281, 366.463, 128.502, 421.372)
+      ..cubicTo(138.008, 464.14, 172.339, 492.568, 213.543, 504.939)
+      ..cubicTo(184.268, 490.258, 161.218, 464.464, 153.994, 428.585)
       ..close();
 
     final path_5 = Path()
-      ..moveTo(size.width * 0.6202, size.height * 0.66)
-      ..cubicTo(
-        size.width * 0.6098,
-        size.height * 0.6486,
-        size.width * 0.5936,
-        size.height * 0.6332,
-        size.width * 0.5867,
-        size.height * 0.6679,
-      )
-      ..cubicTo(
-        size.width * 0.5843,
-        size.height * 0.6797,
-        size.width * 0.5789,
-        size.height * 0.6888,
-        size.width * 0.5742,
-        size.height * 0.6961,
-      )
-      ..cubicTo(
-        size.width * 0.5691,
-        size.height * 0.6705,
-        size.width * 0.5539,
-        size.height * 0.644,
-        size.width * 0.5395,
-        size.height * 0.6261,
-      )
-      ..cubicTo(
-        size.width * 0.5342,
-        size.height * 0.6195,
-        size.width * 0.5151,
-        size.height * 0.5929,
-        size.width * 0.5115,
-        size.height * 0.5484,
-      )
-      ..cubicTo(
-        size.width * 0.5109,
-        size.height * 0.5418,
-        size.width * 0.5031,
-        size.height * 0.5387,
-        size.width * 0.4981,
-        size.height * 0.5432,
-      )
-      ..cubicTo(
-        size.width * 0.451,
-        size.height * 0.5859,
-        size.width * 0.4252,
-        size.height * 0.6447,
-        size.width * 0.4242,
-        size.height * 0.7109,
-      )
-      ..cubicTo(
-        size.width * 0.4242,
-        size.height * 0.7109,
-        size.width * 0.4046,
-        size.height * 0.6944,
-        size.width * 0.394,
-        size.height * 0.6636,
-      )
-      ..cubicTo(
-        size.width * 0.3911,
-        size.height * 0.6554,
-        size.width * 0.38,
-        size.height * 0.6538,
-        size.width * 0.3752,
-        size.height * 0.6611,
-      )
-      ..cubicTo(
-        size.width * 0.3742,
-        size.height * 0.6625,
-        size.width * 0.3734,
-        size.height * 0.6639,
-        size.width * 0.3726,
-        size.height * 0.6653,
-      )
-      ..cubicTo(
-        size.width * 0.3363,
-        size.height * 0.7295,
-        size.width * 0.3188,
-        size.height * 0.8076,
-        size.width * 0.3349,
-        size.height * 0.8802,
-      )
-      ..cubicTo(
-        size.width * 0.362,
-        size.height * 1.0018,
-        size.width * 0.5407,
-        size.height * 1.0357,
-        size.width * 0.6353,
-        size.height * 0.9593,
-      )
-      ..cubicTo(
-        size.width * 0.6677,
-        size.height * 0.9332,
-        size.width * 0.6878,
-        size.height * 0.8963,
-        size.width * 0.6919,
-        size.height * 0.8555,
-      )
-      ..cubicTo(
-        size.width * 0.6981,
-        size.height * 0.7937,
-        size.width * 0.6743,
-        size.height * 0.719,
-        size.width * 0.6202,
-        size.height * 0.66,
-      )
+      ..moveTo(317.534, 337.904)
+      ..cubicTo(312.2, 332.08, 303.904, 324.217, 300.376, 341.969)
+      ..cubicTo(299.177, 348.005, 296.372, 352.657, 293.97, 356.403)
+      ..cubicTo(291.38, 343.296, 283.59, 329.731, 276.248, 320.585)
+      ..cubicTo(273.502, 317.163, 263.755, 303.56, 261.881, 280.801)
+      ..cubicTo(261.601, 277.404, 257.568, 275.809, 255.044, 278.101)
+      ..cubicTo(230.928, 299.993, 217.691, 330.103, 217.2, 363.998)
+      ..cubicTo(217.2, 363.998, 207.157, 355.533, 201.703, 339.787)
+      ..cubicTo(200.234, 335.547, 194.549, 334.738, 192.083, 338.487)
+      ..cubicTo(191.609, 339.206, 191.171, 339.928, 190.774, 340.628)
+      ..cubicTo(172.168, 373.528, 163.217, 413.48, 171.491, 450.651)
+      ..cubicTo(185.326, 512.9, 276.843, 530.303, 325.292, 491.178)
+      ..cubicTo(341.883, 477.78, 352.17, 458.901, 354.256, 438.018)
+      ..cubicTo(357.405, 406.388, 345.232, 368.129, 317.534, 337.904)
       ..close();
 
     final path_6 = Path()
-      ..moveTo(size.width * 0.5718, size.height * 0.8106)
-      ..cubicTo(
-        size.width * 0.566,
-        size.height * 0.8042,
-        size.width * 0.5569,
-        size.height * 0.7957,
-        size.width * 0.5531,
-        size.height * 0.815,
-      )
-      ..cubicTo(
-        size.width * 0.5518,
-        size.height * 0.8215,
-        size.width * 0.5487,
-        size.height * 0.8266,
-        size.width * 0.5461,
-        size.height * 0.8307,
-      )
-      ..cubicTo(
-        size.width * 0.5433,
-        size.height * 0.8164,
-        size.width * 0.5348,
-        size.height * 0.8017,
-        size.width * 0.5269,
-        size.height * 0.7917,
-      )
-      ..cubicTo(
-        size.width * 0.5239,
-        size.height * 0.788,
-        size.width * 0.5133,
-        size.height * 0.7732,
-        size.width * 0.5112,
-        size.height * 0.7484,
-      )
-      ..cubicTo(
-        size.width * 0.5109,
-        size.height * 0.7447,
-        size.width * 0.5065,
-        size.height * 0.743,
-        size.width * 0.5038,
-        size.height * 0.7455,
-      )
-      ..cubicTo(
-        size.width * 0.4775,
-        size.height * 0.7693,
-        size.width * 0.4631,
-        size.height * 0.8021,
-        size.width * 0.4626,
-        size.height * 0.839,
-      )
-      ..cubicTo(
-        size.width * 0.4626,
-        size.height * 0.839,
-        size.width * 0.4517,
-        size.height * 0.8297,
-        size.width * 0.4457,
-        size.height * 0.8126,
-      )
-      ..cubicTo(
-        size.width * 0.4441,
-        size.height * 0.808,
-        size.width * 0.4379,
-        size.height * 0.8071,
-        size.width * 0.4353,
-        size.height * 0.8112,
-      )
-      ..cubicTo(
-        size.width * 0.4348,
-        size.height * 0.812,
-        size.width * 0.4343,
-        size.height * 0.8128,
-        size.width * 0.4338,
-        size.height * 0.8135,
-      )
-      ..cubicTo(
-        size.width * 0.4136,
-        size.height * 0.8493,
-        size.width * 0.4039,
-        size.height * 0.8928,
-        size.width * 0.4129,
-        size.height * 0.9332,
-      )
-      ..cubicTo(
-        size.width * 0.4334,
-        size.height * 1.0255,
-        size.width * 0.6014,
-        size.height * 1.0227,
-        size.width * 0.6117,
-        size.height * 0.9195,
-      )
-      ..cubicTo(
-        size.width * 0.6152,
-        size.height * 0.8851,
-        size.width * 0.6019,
-        size.height * 0.8434,
-        size.width * 0.5718,
-        size.height * 0.8106,
-      )
+      ..moveTo(292.749, 415.006)
+      ..cubicTo(289.777, 411.761, 285.156, 407.381, 283.19, 417.27)
+      ..cubicTo(282.522, 420.633, 280.96, 423.225, 279.621, 425.312)
+      ..cubicTo(278.178, 418.01, 273.838, 410.452, 269.748, 405.357)
+      ..cubicTo(268.218, 403.45, 262.787, 395.871, 261.743, 383.192)
+      ..cubicTo(261.587, 381.299, 259.339, 380.412, 257.934, 381.687)
+      ..cubicTo(244.499, 393.884, 237.123, 410.659, 236.85, 429.543)
+      ..cubicTo(236.85, 429.543, 231.255, 424.827, 228.216, 416.054)
+      ..cubicTo(227.397, 413.691, 224.23, 413.24, 222.857, 415.33)
+      ..cubicTo(222.593, 415.731, 222.349, 416.133, 222.129, 416.523)
+      ..cubicTo(211.763, 434.853, 206.776, 457.111, 211.386, 477.82)
+      ..cubicTo(221.884, 525.051, 307.932, 523.619, 313.21, 470.781)
+      ..cubicTo(314.962, 453.16, 308.18, 431.844, 292.749, 415.006)
       ..close();
 
     final path_7 = Path()
-      ..moveTo(size.width * 0.4519, size.height * 0.9516)
-      ..cubicTo(
-        size.width * 0.4429,
-        size.height * 0.9154,
-        size.width * 0.4526,
-        size.height * 0.8765,
-        size.width * 0.4729,
-        size.height * 0.8445,
-      )
-      ..cubicTo(
-        size.width * 0.4733,
-        size.height * 0.8438,
-        size.width * 0.4738,
-        size.height * 0.8431,
-        size.width * 0.4743,
-        size.height * 0.8424,
-      )
-      ..cubicTo(
-        size.width * 0.477,
-        size.height * 0.8387,
-        size.width * 0.4832,
-        size.height * 0.8395,
-        size.width * 0.4848,
-        size.height * 0.8436,
-      )
-      ..cubicTo(
-        size.width * 0.4907,
-        size.height * 0.859,
-        size.width * 0.5016,
-        size.height * 0.8672,
-        size.width * 0.5016,
-        size.height * 0.8672,
-      )
-      ..cubicTo(
-        size.width * 0.5021,
-        size.height * 0.8401,
-        size.width * 0.5119,
-        size.height * 0.8155,
-        size.width * 0.5299,
-        size.height * 0.7957,
-      )
-      ..cubicTo(
-        size.width * 0.5259,
-        size.height * 0.7902,
-        size.width * 0.5135,
-        size.height * 0.7767,
-        size.width * 0.5112,
-        size.height * 0.7484,
-      )
-      ..cubicTo(
-        size.width * 0.5109,
-        size.height * 0.7447,
-        size.width * 0.5065,
-        size.height * 0.743,
-        size.width * 0.5038,
-        size.height * 0.7455,
-      )
-      ..cubicTo(
-        size.width * 0.4775,
-        size.height * 0.7693,
-        size.width * 0.4631,
-        size.height * 0.8021,
-        size.width * 0.4626,
-        size.height * 0.839,
-      )
-      ..cubicTo(
-        size.width * 0.4626,
-        size.height * 0.839,
-        size.width * 0.4517,
-        size.height * 0.8297,
-        size.width * 0.4457,
-        size.height * 0.8126,
-      )
-      ..cubicTo(
-        size.width * 0.4441,
-        size.height * 0.808,
-        size.width * 0.4379,
-        size.height * 0.8071,
-        size.width * 0.4353,
-        size.height * 0.8112,
-      )
-      ..cubicTo(
-        size.width * 0.4347,
-        size.height * 0.812,
-        size.width * 0.4343,
-        size.height * 0.8128,
-        size.width * 0.4338,
-        size.height * 0.8135,
-      )
-      ..cubicTo(
-        size.width * 0.4136,
-        size.height * 0.8493,
-        size.width * 0.4039,
-        size.height * 0.8928,
-        size.width * 0.4129,
-        size.height * 0.9332,
-      )
-      ..cubicTo(
-        size.width * 0.4212,
-        size.height * 0.9707,
-        size.width * 0.4554,
-        size.height * 0.9933,
-        size.width * 0.4933,
-        size.height * 0.9987,
-      )
-      ..cubicTo(
-        size.width * 0.4729,
-        size.height * 0.9887,
-        size.width * 0.4572,
-        size.height * 0.9728,
-        size.width * 0.4519,
-        size.height * 0.9516,
-      )
+      ..moveTo(231.364, 487.194)
+      ..cubicTo(226.754, 468.669, 231.741, 448.758, 242.107, 432.362)
+      ..cubicTo(242.327, 432.013, 242.572, 431.654, 242.835, 431.295)
+      ..cubicTo(244.209, 429.426, 247.376, 429.829, 248.194, 431.942)
+      ..cubicTo(251.233, 439.79, 256.828, 444.009, 256.828, 444.009)
+      ..cubicTo(257.053, 430.129, 262.081, 417.529, 271.316, 407.423)
+      ..cubicTo(269.251, 404.563, 262.933, 397.667, 261.742, 383.194)
+      ..cubicTo(261.586, 381.301, 259.338, 380.414, 257.933, 381.689)
+      ..cubicTo(244.498, 393.886, 237.122, 410.661, 236.849, 429.545)
+      ..cubicTo(236.849, 429.545, 231.254, 424.829, 228.215, 416.057)
+      ..cubicTo(227.397, 413.694, 224.229, 413.243, 222.856, 415.333)
+      ..cubicTo(222.592, 415.734, 222.348, 416.136, 222.128, 416.526)
+      ..cubicTo(211.762, 434.855, 206.775, 457.114, 211.385, 477.823)
+      ..cubicTo(215.651, 497.018, 233.177, 508.554, 252.553, 511.338)
+      ..cubicTo(242.101, 506.205, 234.068, 498.077, 231.364, 487.194)
       ..close();
 
     final path_8 = Path()
-      ..moveTo(size.width * 0.3605, size.height * 0.1329)
-      ..cubicTo(
-        size.width * 0.4028,
-        size.height * 0.0985,
-        size.width * 0.4027,
-        size.height * 0.0343,
-        size.width * 0.3605,
-        size.height * 0,
-      )
-      ..cubicTo(
-        size.width * 0.3183,
-        size.height * 0.0344,
-        size.width * 0.3184,
-        size.height * 0.0986,
-        size.width * 0.3605,
-        size.height * 0.1329,
-      )
+      ..moveTo(184.598, 68.045)
+      ..cubicTo(206.223, 50.456, 206.175, 17.549, 184.598, 0)
+      ..cubicTo(162.973, 17.588, 163.02, 50.496, 184.598, 68.045)
       ..close();
 
     final path_9 = Path()
-      ..moveTo(size.width * 0.8668, size.height * 0.4086)
-      ..cubicTo(
-        size.width * 0.909,
-        size.height * 0.3743,
-        size.width * 0.9089,
-        size.height * 0.31,
-        size.width * 0.8668,
-        size.height * 0.2757,
-      )
-      ..cubicTo(
-        size.width * 0.8475,
-        size.height * 0.2914,
-        size.width * 0.8246,
-        size.height * 0.3743,
-        size.width * 0.8668,
-        size.height * 0.4086,
-      )
+      ..moveTo(443.793, 209.213)
+      ..cubicTo(465.418, 191.624, 465.37, 158.717, 443.793, 141.168)
+      ..cubicTo(433.909, 149.206, 422.216, 191.664, 443.793, 209.213)
       ..close();
 
     final path_10 = Path()
-      ..moveTo(size.width * 0.1187, size.height * 0.4348)
-      ..cubicTo(
-        size.width * 0.1492,
-        size.height * 0.41,
-        size.width * 0.1491,
-        size.height * 0.3637,
-        size.width * 0.1187,
-        size.height * 0.339,
-      )
-      ..cubicTo(
-        size.width * 0.1048,
-        size.height * 0.3503,
-        size.width * 0.0883,
-        size.height * 0.4101,
-        size.width * 0.1187,
-        size.height * 0.4348,
-      )
+      ..moveTo(60.785, 222.606)
+      ..cubicTo(76.37, 209.929, 76.336, 186.214, 60.785, 173.565)
+      ..cubicTo(53.662, 179.358, 45.234, 209.958, 60.785, 222.606)
       ..close();
 
     final path_11 = Path()
-      ..moveTo(size.width * 0.6459, size.height * 0.2287)
-      ..cubicTo(
-        size.width * 0.6764,
-        size.height * 0.2039,
-        size.width * 0.6763,
-        size.height * 0.1576,
-        size.width * 0.6459,
-        size.height * 0.1329,
-      )
-      ..cubicTo(
-        size.width * 0.6155,
-        size.height * 0.1577,
-        size.width * 0.6155,
-        size.height * 0.204,
-        size.width * 0.6459,
-        size.height * 0.2287,
-      )
+      ..moveTo(330.709, 117.086)
+      ..cubicTo(346.294, 104.409, 346.26, 80.694, 330.709, 68.045)
+      ..cubicTo(315.124, 80.721, 315.159, 104.438, 330.709, 117.086)
       ..close();
 
     final path_12 = Path()
-      ..moveTo(size.width * 0.4217, size.height * 0.5573)
-      ..cubicTo(
-        size.width * 0.4287,
-        size.height * 0.4748,
-        size.width * 0.4602,
-        size.height * 0.4014,
-        size.width * 0.5131,
-        size.height * 0.3454,
-      )
-      ..cubicTo(
-        size.width * 0.5126,
-        size.height * 0.3414,
-        size.width * 0.5121,
-        size.height * 0.3372,
-        size.width * 0.5118,
-        size.height * 0.3329,
-      )
-      ..cubicTo(
-        size.width * 0.511,
-        size.height * 0.3231,
-        size.width * 0.4993,
-        size.height * 0.3185,
-        size.width * 0.4921,
-        size.height * 0.3251,
-      )
-      ..cubicTo(
-        size.width * 0.4369,
-        size.height * 0.3752,
-        size.width * 0.4015,
-        size.height * 0.4402,
-        size.width * 0.3885,
-        size.height * 0.5136,
-      )
-      ..lineTo(size.width * 0.3885, size.height * 0.5136)
-      ..cubicTo(
-        size.width * 0.3875,
-        size.height * 0.5191,
-        size.width * 0.3863,
-        size.height * 0.527,
-        size.width * 0.3856,
-        size.height * 0.5332,
-      )
-      ..cubicTo(
-        size.width * 0.3856,
-        size.height * 0.5332,
-        size.width * 0.3856,
-        size.height * 0.5332,
-        size.width * 0.3856,
-        size.height * 0.5332,
-      )
-      ..cubicTo(
-        size.width * 0.384,
-        size.height * 0.5463,
-        size.width * 0.3831,
-        size.height * 0.5595,
-        size.width * 0.3829,
-        size.height * 0.573,
-      )
-      ..cubicTo(
-        size.width * 0.3843,
-        size.height * 0.5733,
-        size.width * 0.4177,
-        size.height * 0.5904,
-        size.width * 0.4217,
-        size.height * 0.5573,
-      )
+      ..moveTo(215.911, 285.324)
+      ..cubicTo(219.49, 243.072, 235.625, 205.503, 262.717, 176.862)
+      ..cubicTo(262.443, 174.786, 262.212, 172.655, 262.032, 170.464)
+      ..cubicTo(261.619, 165.446, 255.66, 163.091, 251.932, 166.475)
+      ..cubicTo(223.702, 192.101, 205.584, 225.357, 198.91, 262.972)
+      ..lineTo(198.9, 262.969)
+      ..cubicTo(198.405, 265.759, 197.791, 269.823, 197.403, 273.016)
+      ..cubicTo(197.404, 273.019, 197.405, 273.021, 197.407, 273.024)
+      ..cubicTo(196.596, 279.688, 196.126, 286.472, 196.026, 293.367)
+      ..cubicTo(196.78, 293.514, 213.848, 302.287, 215.911, 285.324)
       ..close();
 
     final path_13 = Path()
-      ..moveTo(size.width * 0.3837, size.height * 0.8974)
-      ..cubicTo(
-        size.width * 0.3693,
-        size.height * 0.8296,
-        size.width * 0.3815,
-        size.height * 0.7573,
-        size.width * 0.4099,
-        size.height * 0.6946,
-      )
-      ..cubicTo(
-        size.width * 0.4044,
-        size.height * 0.6869,
-        size.width * 0.3984,
-        size.height * 0.6765,
-        size.width * 0.394,
-        size.height * 0.6636,
-      )
-      ..cubicTo(
-        size.width * 0.3911,
-        size.height * 0.6554,
-        size.width * 0.38,
-        size.height * 0.6538,
-        size.width * 0.3752,
-        size.height * 0.6611,
-      )
-      ..cubicTo(
-        size.width * 0.3742,
-        size.height * 0.6625,
-        size.width * 0.3734,
-        size.height * 0.6639,
-        size.width * 0.3726,
-        size.height * 0.6653,
-      )
-      ..cubicTo(
-        size.width * 0.3363,
-        size.height * 0.7295,
-        size.width * 0.3188,
-        size.height * 0.8076,
-        size.width * 0.3349,
-        size.height * 0.8802,
-      )
-      ..cubicTo(
-        size.width * 0.3476,
-        size.height * 0.9371,
-        size.width * 0.3935,
-        size.height * 0.9748,
-        size.width * 0.4485,
-        size.height * 0.991,
-      )
-      ..cubicTo(
-        size.width * 0.4165,
-        size.height * 0.9698,
-        size.width * 0.3923,
-        size.height * 0.9383,
-        size.width * 0.3837,
-        size.height * 0.8974,
-      )
+      ..moveTo(196.43, 459.481)
+      ..cubicTo(189.075, 424.756, 195.339, 387.726, 209.891, 355.641)
+      ..cubicTo(207.072, 351.688, 203.987, 346.378, 201.704, 339.786)
+      ..cubicTo(200.234, 335.546, 194.55, 334.737, 192.083, 338.486)
+      ..cubicTo(191.61, 339.205, 191.17, 339.927, 190.774, 340.627)
+      ..cubicTo(172.168, 373.527, 163.217, 413.479, 171.491, 450.65)
+      ..cubicTo(177.971, 479.802, 201.488, 499.118, 229.639, 507.399)
+      ..cubicTo(213.253, 496.521, 200.858, 480.42, 196.43, 459.481)
       ..close();
 
     final path_14 = Path()
-      ..moveTo(size.width * 0.4761, size.height * 0.6813)
-      ..cubicTo(
-        size.width * 0.4808,
-        size.height * 0.6473,
-        size.width * 0.4948,
-        size.height * 0.6098,
-        size.width * 0.5167,
-        size.height * 0.5784,
-      )
-      ..cubicTo(
-        size.width * 0.5143,
-        size.height * 0.5696,
-        size.width * 0.5124,
-        size.height * 0.5596,
-        size.width * 0.5115,
-        size.height * 0.5484,
-      )
-      ..cubicTo(
-        size.width * 0.5109,
-        size.height * 0.5418,
-        size.width * 0.5031,
-        size.height * 0.5387,
-        size.width * 0.4981,
-        size.height * 0.5432,
-      )
-      ..cubicTo(
-        size.width * 0.4688,
-        size.height * 0.5698,
-        size.width * 0.4477,
-        size.height * 0.6027,
-        size.width * 0.4358,
-        size.height * 0.6397,
-      )
-      ..lineTo(size.width * 0.4357, size.height * 0.6397)
-      ..cubicTo(
-        size.width * 0.4338,
-        size.height * 0.6455,
-        size.width * 0.4312,
-        size.height * 0.6551,
-        size.width * 0.4296,
-        size.height * 0.6627,
-      )
-      ..cubicTo(
-        size.width * 0.4296,
-        size.height * 0.6627,
-        size.width * 0.4296,
-        size.height * 0.6627,
-        size.width * 0.4296,
-        size.height * 0.6627,
-      )
-      ..cubicTo(
-        size.width * 0.4263,
-        size.height * 0.6783,
-        size.width * 0.4245,
-        size.height * 0.6944,
-        size.width * 0.4242,
-        size.height * 0.7109,
-      )
-      ..cubicTo(
-        size.width * 0.4506,
-        size.height * 0.7142,
-        size.width * 0.4724,
-        size.height * 0.7077,
-        size.width * 0.4761,
-        size.height * 0.6813,
-      )
+      ..moveTo(243.751, 348.824)
+      ..cubicTo(246.189, 331.399, 253.316, 312.2, 264.535, 296.149)
+      ..cubicTo(263.313, 291.617, 262.352, 286.496, 261.883, 280.801)
+      ..cubicTo(261.603, 277.404, 257.569, 275.809, 255.046, 278.101)
+      ..cubicTo(240.02, 291.742, 229.235, 308.58, 223.108, 327.529)
+      ..lineTo(223.092, 327.525)
+      ..cubicTo(222.128, 330.502, 220.765, 335.434, 219.939, 339.327)
+      ..cubicTo(219.946, 339.325, 219.953, 339.325, 219.96, 339.322)
+      ..cubicTo(218.268, 347.266, 217.327, 355.51, 217.204, 363.997)
+      ..cubicTo(230.696, 365.681, 241.857, 362.34, 243.751, 348.824)
       ..close();
 
     canvas.drawPath(path_0, paint0Fill);
@@ -1164,6 +304,10 @@ class FireRenderObject extends RenderBox {
     canvas.drawPath(path_13, paint7Fill);
     canvas.drawPath(path_14, paint7Fill);
 
-    return recorder.endRecording();
-  }();
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(FirePainter oldDelegate) =>
+      oldDelegate._colorFilter != _colorFilter;
 }

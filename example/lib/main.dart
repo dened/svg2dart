@@ -27,7 +27,7 @@ class MyApp extends StatelessWidget {
 }
 
 final colorFilter = ColorFilter.mode(Colors.yellow, BlendMode.srcIn);
-const dimesion = 96.0;
+const dimesion = 48.0;
 
 class MyHomePage extends StatelessWidget {
   const MyHomePage({super.key, required this.title});
@@ -42,90 +42,61 @@ class MyHomePage extends StatelessWidget {
 
         title: Text(title),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Row(
-              children: [
-                Expanded(
-                  child: SvgPicture.asset(
-                    'assets/svg/circle.svg',
-                    width: dimesion,
-                    height: dimesion,
-                  ),
-                ),
-                Expanded(
-                  child: Circle(width: dimesion, height: dimesion),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                Expanded(
-                  child: SvgPicture.asset(
-                    'assets/svg/circle.svg',
-                    colorFilter: colorFilter,
-                  ),
-                ),
-                Expanded(child: Circle(colorFilter: colorFilter)),
-              ],
-            ),
-            Row(
-              children: [
-                Expanded(child: SvgPicture.asset('assets/svg/cloud.svg')),
-                Expanded(child: Cloud()),
-              ],
-            ),
-            Row(
-              children: [
-                Expanded(child: SvgPicture.asset('assets/svg/fire.svg')),
-                Expanded(child: Fire()),
-              ],
-            ),
+      body: GridView.count(
+        crossAxisCount: 2,
+        children: <Widget>[
+          SvgPicture.asset(
+            'assets/svg/circle.svg',
+            width: dimesion,
+            height: dimesion,
+          ),
+          Circle(width: dimesion, height: dimesion),
 
-            Row(
-              children: [
-                Expanded(
-                  child: SvgPicture.asset(
-                    'assets/svg/fire.svg',
-                    width: dimesion,
-                    height: dimesion,
-                  ),
-                ),
-                Expanded(
-                  child: Fire(width: dimesion, height: dimesion),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                Expanded(child: SvgPicture.asset('assets/svg/gift.svg')),
-                Expanded(child: Gift()),
-              ],
-            ),
-            Row(
-              children: [
-                Expanded(
-                  child: SvgPicture.asset(
-                    'assets/svg/gift.svg',
-                    colorFilter: colorFilter,
-                  ),
-                ),
-                Expanded(child: Gift(colorFilter: colorFilter)),
-              ],
-            ),
+          ///
+          SvgPicture.asset('assets/svg/circle.svg', colorFilter: colorFilter),
+          Circle(colorFilter: colorFilter),
 
-            Row(
-              children: [
-                Expanded(child: SvgPicture.asset('assets/svg/generated.svg')),
-                Expanded(child: Generated()),
-              ],
-            ),
+          ///
+          ///
+          SvgPicture.asset('assets/svg/cloud.svg'),
+          Cloud(),
 
-            SizedBox(height: 48),
-          ],
-        ),
+          ///
+          ///
+          ///
+          SvgPicture.asset('assets/svg/fire.svg'),
+          Fire(),
+
+          ///
+          Center(
+            child: SvgPicture.asset(
+              'assets/svg/fire.svg',
+              width: dimesion,
+              height: dimesion,
+            ),
+          ),
+          Center(
+            child: Fire(width: dimesion, height: dimesion),
+          ),
+
+          ///
+          SvgPicture.asset('assets/svg/gift.svg'),
+          Gift(),
+
+          ///
+          SvgPicture.asset('assets/svg/gift.svg', colorFilter: colorFilter),
+          Gift(colorFilter: colorFilter),
+
+          ///
+          SvgPicture.asset(
+            'assets/svg/generated.svg',
+            width: dimesion,
+            height: dimesion,
+          ),
+          Generated(),
+
+          ///
+        ],
       ),
     );
   }

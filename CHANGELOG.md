@@ -1,5 +1,8 @@
 # Changelog
 
+## Unreleased
+* FIX: Ensure generated widgets properly clip their content to the specified width and height, preventing overflow issues.
+
 ## 0.0.5
 
 *   Added the ability to generate three types of classes for rendering, selectable with the `convertTo` option:

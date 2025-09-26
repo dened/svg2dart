@@ -5,6 +5,6 @@ targets:
         enabled: true
         options:
           input: 'assets/svg'
-          output: 'lib/generated/painters'
-          convertTo: 'record'
-          optimizations: true
+          output: 'lib/generated/icons'
+          convertTo: 'customPainter'
+          optimizations: false
