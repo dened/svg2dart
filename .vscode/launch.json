@@ -14,7 +14,7 @@
                 "assets/svg/generated.svg",
                 "-o",
                 "lib/generated/icons/generated.dart",
-                "--opt"
+                "--no-opt"
             ]
         },
         // dart --enable-vm-service --pause-isolates-on-start run build_runner build --verbose

@@ -46,7 +46,7 @@ String generateFromContent(String svgContent, String assetFilename,
     codec.decode(bytes.buffer.asByteData(), generator, response: response);
   }
 
-  final widgetName = _snakeToPascalCase(assetFilename);
+  final widgetName = '${_snakeToPascalCase(assetFilename)}\$SVG';
   final painterName = '${widgetName}Painter';
 
   return _formatter.format(generator.getFileContent(widgetName, painterName));

@@ -47,6 +47,7 @@ class CodeGenerator implements VectorGraphicsCodecListener {
   final Map<int, String> _textPositions = <int, String>{};
   final Map<int, String> _images = <int, String>{};
   bool _hasImages = false;
+  bool _usesTypedData = false;
 
   final StringBuffer _definitions = StringBuffer();
   final StringBuffer _drawCommands = StringBuffer();
@@ -99,8 +100,7 @@ class CodeGenerator implements VectorGraphicsCodecListener {
     final buffer = StringBuffer()..writeln('''
 // ignore_for_file: cascade_invocations, prefer_int_literals, unused_import
 
-import 'dart:math';
-import 'dart:typed_data';
+import 'dart:math';${_usesTypedData ? "\nimport 'dart:typed_data';" : ''}
 import 'dart:ui' as ui;
 import 'package:flutter/widgets.dart';
 
@@ -252,9 +252,8 @@ class _${widgetName}Painter {
     final buffer = StringBuffer()..writeln('''
 // ignore_for_file: cascade_invocations, prefer_int_literals, unused_import
 
-import 'dart:math';
+import 'dart:math';${_usesTypedData ? "\nimport 'dart:typed_data';" : ''}
 import 'dart:ui' as ui;
-import 'dart:typed_data';
 import 'package:flutter/widgets.dart';
 
 /// {@template $widgetName}
@@ -379,9 +378,8 @@ ${_drawCommands.toString()}
     final buffer = StringBuffer()..writeln('''
 // ignore_for_file: cascade_invocations, prefer_int_literals, unused_import
 
-import 'dart:math';
+import 'dart:math';${_usesTypedData ? "\nimport 'dart.typed_data';" : ''}
 import 'dart:ui' as ui;
-import 'dart:typed_data';
 import 'package:flutter/widgets.dart';
 
 /// {@template $widgetName}
@@ -620,6 +618,7 @@ ${_drawCommands.toString()}
     int tileMode,
     int id,
   ) {
+    _usesTypedData = true;
     final shaderVar = 'shader$id';
     _shaders[id] = shaderVar;
     final colorsList = colors.map(_colorToCode).join(', ');
@@ -655,6 +654,7 @@ ${_drawCommands.toString()}
 
   @override
   void onDrawVertices(Float32List vertices, Uint16List? indices, int? paintId) {
+    _usesTypedData = true;
     final verticesVar = 'vertices${_drawCommands.length}';
     final indicesList =
         indices == null ? 'null' : 'Uint16List.fromList(${indices.toString()})';
@@ -706,6 +706,7 @@ ${_drawCommands.toString()}
     bool reset,
     Float64List? transform,
   ) {
+    _usesTypedData = true;
     final positionVar = 'textPosition$id';
     _textPositions[id] = positionVar;
     final transformList = transform == null

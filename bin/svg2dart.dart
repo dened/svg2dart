@@ -113,7 +113,7 @@ void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
           for (final svgFile in svgFiles) {
             final relativePath = p.relative(svgFile.path, from: inputPath);
             final outputFilePath = p.setExtension(
-                p.join(outputPath, relativePath.replaceAll('-', '_')), '.dart');
+                p.join(outputPath, relativePath.replaceAll('-', '_')), '.gen.dart');
             await generateWidgets(svgFile.path, outputFilePath,
                 convertTo: convertTo);
           }

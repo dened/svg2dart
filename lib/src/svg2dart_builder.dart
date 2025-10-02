@@ -18,7 +18,7 @@ class Svg2DartBuilder implements Builder {
 
   @override
   Map<String, List<String>> get buildExtensions => {
-        '${_options.input}/{{}}.svg': ['${_options.output}/{{}}.dart'],
+        '${_options.input}/{{}}.svg': ['${_options.output}/{{}.gen.dart'],
       };
 
   @override
@@ -40,7 +40,7 @@ class Svg2DartBuilder implements Builder {
       assetId.package,
       p.join(
         _options.output,
-        p.setExtension('$baseOutputPath.svg', '.dart').replaceAll('-', '_'),
+        p.setExtension('$baseOutputPath.svg', '.gen.dart').replaceAll('-', '_'),
       ),
     );
 

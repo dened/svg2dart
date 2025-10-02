@@ -1,8 +1,11 @@
- # SVG to Dart Widget Converter (`svg2dart`)
+ # SVG to Dart Widget Converter 
 
 `svg2dart` is a command-line tool that converts SVG files into pure Dart code. It generates performant Flutter widgets that use `LeafRenderObjectWidget` and a pre-recorded `ui.Picture` for rendering.
 
 This approach allows you to use your vector graphics directly in your Flutter application without runtime dependencies like `flutter_svg`, which can lead to better performance and a smaller dependency tree.
+
+![example of svg](.img/svg.png)
+![example of code](.img/code.png)
 
 ## Features
 
