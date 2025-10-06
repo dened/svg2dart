@@ -4,9 +4,7 @@
 
 This approach allows you to use your vector graphics directly in your Flutter application without runtime dependencies like `flutter_svg`, which can lead to better performance and a smaller dependency tree.
 
-![example of svg](.img/svg.png)
-![example of code](.img/code.png)
-
+![logo](.img/logo.png)
 ## Features
 
 - Converts SVG paths, fills, strokes, and basic gradients.

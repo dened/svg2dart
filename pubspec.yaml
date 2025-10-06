@@ -15,10 +15,9 @@ topics:
   - widget
 
 screenshots:
-  - description: 'Example of svg'
-    path: .img/svg.png
-  - description: 'Example of generated code'
-    path: .img/code.png
+  - description: 'Logo'
+    path: .img/logo.png
+
 
 # This package supports all platforms listed below.
 platforms:
