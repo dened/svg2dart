@@ -4,7 +4,6 @@ import 'dart:io' as io;
 import 'package:args/args.dart';
 import 'package:path/path.dart' as p;
 import 'package:svg2dart/generator.dart';
-import 'package:svg2dart/src/code_generator.dart';
 import 'package:vector_graphics_compiler/vector_graphics_compiler.dart'
     show
         initializePathOpsFromFlutterCache,
@@ -69,10 +68,8 @@ void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
         final enableOptimizations = argResults['optimizations'] != false;
         final inputPath = argResults['input'] as String;
         final outputPath = argResults['output'] as String;
-        final convertTo =
-            OutputClassType.fromString(argResults['convertTo'] as String);
 
-        _printSettings(inputPath, outputPath, convertTo, enableOptimizations);
+        _printSettings(inputPath, outputPath, enableOptimizations);
 
         if (enableOptimizations) {
           initializePathOpsFromFlutterCache();
@@ -93,7 +90,7 @@ void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
             io.exit(1);
           }
           $info('Start parsing file $inputPath...');
-          await generateWidgets(inputPath, outputPath, convertTo: convertTo);
+          await generateWidgets(inputPath, outputPath);
           await _fix(outputPath);
           $info('Finished conversion.');
         } else if (inputType == io.FileSystemEntityType.directory) {
@@ -113,9 +110,9 @@ void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
           for (final svgFile in svgFiles) {
             final relativePath = p.relative(svgFile.path, from: inputPath);
             final outputFilePath = p.setExtension(
-                p.join(outputPath, relativePath.replaceAll('-', '_')), '.gen.dart');
-            await generateWidgets(svgFile.path, outputFilePath,
-                convertTo: convertTo);
+                p.join(outputPath, relativePath.replaceAll('-', '_')),
+                '.gen.dart');
+            await generateWidgets(svgFile.path, outputFilePath);
           }
           await _fix(outputPath);
           $info('Finished conversion of all SVG files.');
@@ -131,13 +128,11 @@ void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
 void _printSettings(
   String input,
   String output,
-  OutputClassType convertTo,
   bool opt,
 ) {
   $info('=================================================');
   $info('Input directory (-i):       $input');
   $info('Output directory (-o):      $output');
-  $info('Convert to (-c):            $convertTo');
   $info('Optimizations (--opt):      $opt');
   $info('=================================================\n');
 }

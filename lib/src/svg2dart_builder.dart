@@ -29,7 +29,6 @@ class Svg2DartBuilder implements Builder {
     final generatedCode = generateFromContent(
       svgContent,
       assetFilename,
-      convertTo: _options.convertTo,
       enableOptimizations: _options.optimizations,
     );
 

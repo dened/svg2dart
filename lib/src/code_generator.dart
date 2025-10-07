@@ -6,38 +6,6 @@ import 'package:meta/meta.dart';
 import 'package:vector_graphics_codec/vector_graphics_codec.dart';
 import 'package:vector_graphics_compiler/vector_graphics_compiler.dart';
 
-/// Определяет тип генерируемого виджета.
-enum OutputClassType {
-  /// Генерирует `LeafRenderObjectWidget` с предварительно записанным `ui.Picture`.
-  record('record'),
-
-  /// Генерирует `StatelessWidget`, который использует `CustomPainter`.
-  customPainter('customPainter'),
-
-  /// Генерирует `LeafRenderObjectWidget` с отрисовкой в методе `paint`.
-  renderBox('renderBox');
-
-  /// Конструктор
-  const OutputClassType(this.type);
-
-  /// Тип
-  final String type;
-
-  /// Creates a [OutputClassType] from its string representation.
-  static OutputClassType fromString(String? type) {
-    switch (type) {
-      case 'record':
-        return OutputClassType.record;
-      case 'customPainter':
-        return OutputClassType.customPainter;
-      case 'renderBox':
-        return OutputClassType.renderBox;
-      default:
-        return OutputClassType.record;
-    }
-  }
-}
-
 @internal
 class CodeGenerator implements VectorGraphicsCodecListener {
   final Map<int, String> _paints = <int, String>{};
@@ -56,12 +24,6 @@ class CodeGenerator implements VectorGraphicsCodecListener {
       'Paint()..blendMode = BlendMode.dstIn..colorFilter = const ColorFilter.matrix(<double>[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.2126,0.7152,0.0722,0,0,])';
 
   StringBuffer? _currentPathBuffer;
-
-  /// Тип генерируемого класса.
-  final OutputClassType classType;
-
-  /// Создает экземпляр [CodeGenerator].
-  CodeGenerator({this.classType = OutputClassType.record});
 
   Size _size = Size.zero;
   String _colorToCode(int value) =>
@@ -86,14 +48,7 @@ class CodeGenerator implements VectorGraphicsCodecListener {
       return '';
     }
 
-    switch (classType) {
-      case OutputClassType.record:
-        return _getRecordFileContent(widgetName);
-      case OutputClassType.customPainter:
-        return _getCustomPainterFileContent(widgetName, painterName);
-      case OutputClassType.renderBox:
-        return _getRenderBoxFileContent(widgetName);
-    }
+    return _getRecordFileContent(widgetName);
   }
 
   String _getRecordFileContent(String widgetName) {
@@ -245,202 +200,6 @@ class _${widgetName}Painter {
 }
 ''');
 
-    return buffer.toString();
-  }
-
-  String _getRenderBoxFileContent(String widgetName) {
-    final buffer = StringBuffer()..writeln('''
-// ignore_for_file: cascade_invocations, prefer_int_literals, unused_import
-
-import 'dart:math';${_usesTypedData ? "\nimport 'dart:typed_data';" : ''}
-import 'dart:ui' as ui;
-import 'package:flutter/widgets.dart';
-
-/// {@template $widgetName}
-/// $widgetName widget.
-/// {@endtemplate}
-class $widgetName extends LeafRenderObjectWidget {
-  /// {@macro $widgetName}
-  const $widgetName({super.key, this.width, this.height, this.colorFilter});
-
-  final double? width;
-  final double? height;
-  final ui.ColorFilter? colorFilter;
-
-  static const Size svgSize = Size(${_d(_size.width)}, ${_d(_size.height)});
-
-  @override
-  RenderObject createRenderObject(BuildContext context) =>
-      ${widgetName}RenderObject()
-        ..width = width
-        ..height = height
-        ..colorFilter = colorFilter;
-
-  @override
-  void updateRenderObject(
-    BuildContext context,
-    ${widgetName}RenderObject renderObject,
-  ) {
-    renderObject
-      ..width = width
-      ..height = height
-      ..colorFilter = colorFilter;
-  }
-}
-
-class ${widgetName}RenderObject extends RenderBox {
-  ${widgetName}RenderObject();
-
-  ui.ColorFilter? _colorFilter;
-  double? _width;
-  double? _height;
-
-  set width(double? value) {
-    if (_width == value) {
-      return;
-    }
-    _width = value;
-    markNeedsLayout();
-  }
-
-  set height(double? value) {
-    if (_height == value) {
-      return;
-    }
-    _height = value;
-    markNeedsLayout();
-  }
-
-  set colorFilter(ui.ColorFilter? value) {
-    if (_colorFilter == value) {
-      return;
-    }
-    _colorFilter = value;
-    markNeedsPaint();
-  }
-
-  double _scale = 1.0;
-
-  @override
-  bool get isRepaintBoundary => false;
-
-  @override
-  bool get sizedByParent => false;
-
-  @override
-  Size computeDryLayout(BoxConstraints constraints) {
-    final desiredWidth = _width ?? $widgetName.svgSize.width;
-    final desiredHeight = _height ?? $widgetName.svgSize.height;
-    final desiredSize = Size(desiredWidth, desiredHeight);
-    return constraints.constrain(desiredSize);
-  }
-
-  @override
-  void performLayout() {
-    size = computeDryLayout(constraints);
-    if ($widgetName.svgSize.width == 0 || $widgetName.svgSize.height == 0) {
-      _scale = 1.0;
-      return;
-    }
-    _scale = min(
-      size.width / $widgetName.svgSize.width,
-      size.height / $widgetName.svgSize.height,
-    );
-  }
-
-  @override
-  bool hitTestSelf(Offset position) => true;
-
-  @override
-  void paint(PaintingContext context, Offset offset) {
-    final scale = _scale;
-    final canvas = context.canvas..save();
-
-    final dx = (size.width - $widgetName.svgSize.width * scale) / 2;
-    final dy = (size.height - $widgetName.svgSize.height * scale) / 2;
-
-    canvas
-      ..translate(offset.dx + dx, offset.dy + dy)
-      ..clipRect(Offset.zero & size)
-      ..scale(scale, scale);
-
-${_definitions.toString().replaceAll('const size = $widgetName.svgSize;', 'final size = $widgetName.svgSize;')}
-${_drawCommands.toString()}
-
-    canvas.restore();
-  }
-}
-''');
-    return buffer.toString();
-  }
-
-  String _getCustomPainterFileContent(String widgetName, String painterName) {
-    final buffer = StringBuffer()..writeln('''
-// ignore_for_file: cascade_invocations, prefer_int_literals, unused_import
-
-import 'dart:math';${_usesTypedData ? "\nimport 'dart.typed_data';" : ''}
-import 'dart:ui' as ui;
-import 'package:flutter/widgets.dart';
-
-/// {@template $widgetName}
-/// $widgetName widget.
-/// {@endtemplate}
-class $widgetName extends StatelessWidget {
-  /// {@macro $widgetName}
-  const $widgetName({super.key, this.width, this.height, this.colorFilter});
-
-  final double? width;
-  final double? height;
-  final ui.ColorFilter? colorFilter;
-
-  static const Size svgSize = Size(${_d(_size.width)}, ${_d(_size.height)});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
-      height: height,
-      child: CustomPaint(
-        painter: $painterName(colorFilter: colorFilter),
-        size: svgSize,
-      ),
-    );
-  }
-}
-
-/// {@template $painterName}
-/// Custom painter for [$widgetName].
-/// {@endtemplate}
-class $painterName extends CustomPainter {
-  /// {@macro $painterName}
-  const $painterName({ui.ColorFilter? colorFilter}):_colorFilter = colorFilter;
-
-  final ui.ColorFilter? _colorFilter;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final scale = min(
-      size.width / $widgetName.svgSize.width,
-      size.height / $widgetName.svgSize.height,
-    );
-
-    canvas.save();
-    final dx = (size.width - $widgetName.svgSize.width * scale) / 2;
-    final dy = (size.height - $widgetName.svgSize.height * scale) / 2;
-    canvas
-      ..translate(dx, dy)
-      ..clipRect(Offset.zero & size)
-      ..scale(scale);
-
-${_definitions.toString()}
-${_drawCommands.toString()}
-
-    canvas.restore();
-  }
-
-  @override
-  bool shouldRepaint($painterName oldDelegate) => oldDelegate._colorFilter != _colorFilter;
-}''');
     return buffer.toString();
   }
 
