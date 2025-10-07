@@ -3,6 +3,8 @@
 import 'dart:typed_data';
 
 import 'package:meta/meta.dart';
+import 'package:svg2dart/src/not_supported_exception.dart';
+import 'package:svg2dart/src/templates.dart';
 import 'package:vector_graphics_codec/vector_graphics_codec.dart';
 import 'package:vector_graphics_compiler/vector_graphics_compiler.dart';
 
@@ -11,17 +13,27 @@ class CodeGenerator implements VectorGraphicsCodecListener {
   final Map<int, String> _paints = <int, String>{};
   final Map<int, String> _paths = <int, String>{};
   final Map<int, String> _shaders = <int, String>{};
-  final Map<int, String> _textConfigs = <int, String>{};
-  final Map<int, String> _textPositions = <int, String>{};
-  final Map<int, String> _images = <int, String>{};
-  bool _hasImages = false;
+  final List<_TextConfig> _textConfig = <_TextConfig>[];
+  final List<_TextPosition> _textPositions = <_TextPosition>[];
+
   bool _usesTypedData = false;
 
   final StringBuffer _definitions = StringBuffer();
   final StringBuffer _drawCommands = StringBuffer();
+  bool _isAddedDrawTextFunction = false;
+  bool _isDefineDrawTextVars = false;
 
-  static const String _grayscaleDstInPaint =
-      'Paint()..blendMode = BlendMode.dstIn..colorFilter = const ColorFilter.matrix(<double>[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0.2126,0.7152,0.0722,0,0,])';
+// convert to grayscale (https://www.w3.org/Graphics/Color/sRGB) and
+// use them as transparency
+  static const String _grayscaleDstInPaint = '''
+Paint()
+    ..blendMode = BlendMode.dstIn
+    ..colorFilter = const ColorFilter.matrix(<double>[
+      0, 0, 0, 0, 0, //
+      0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0,
+      0.2126, 0.7152, 0.0722, 0, 0,
+    ])''';
 
   StringBuffer? _currentPathBuffer;
 
@@ -29,179 +41,17 @@ class CodeGenerator implements VectorGraphicsCodecListener {
   String _colorToCode(int value) =>
       'const Color(0x${(value & 0xFFFFFFFF).toRadixString(16).padLeft(8, '0')})';
 
-  String _d(double val) {
-    if (val == val.roundToDouble()) {
-      return val.toInt().toString();
-    }
-    var s = val.toStringAsFixed(4);
-    s = s.replaceAll(RegExp(r'0+$'), '');
-    s = s.replaceAll(RegExp(r'\.$'), '');
-    return s;
-  }
+  double _textPositionX = 0;
+  double _textPositionY = 0;
+  Float64List? _textTransform;
 
-  String getFileContent(String widgetName, String painterName) {
-    if (_hasImages) {
-      // ignore: avoid_print
-      print(
-        'Warning: SVG file for "$widgetName" contains an image, which is not supported. Skipping file generation.',
+  String getFileContent(String widgetName) => generateCodeFromTemplate(
+        widgetName: widgetName,
+        useTypedDataImport: _usesTypedData,
+        definitions: _definitions,
+        drawCommands: _drawCommands,
+        size: _size,
       );
-      return '';
-    }
-
-    return _getRecordFileContent(widgetName);
-  }
-
-  String _getRecordFileContent(String widgetName) {
-    final buffer = StringBuffer()..writeln('''
-// ignore_for_file: cascade_invocations, prefer_int_literals, unused_import
-
-import 'dart:math';${_usesTypedData ? "\nimport 'dart:typed_data';" : ''}
-import 'dart:ui' as ui;
-import 'package:flutter/widgets.dart';
-
-
-/// {@template $widgetName}
-/// $widgetName widget.
-/// {@endtemplate}
-class $widgetName extends LeafRenderObjectWidget {
-  /// {@macro $widgetName}
-  const $widgetName({super.key, this.width, this.height, this.colorFilter});
-
-  final double? width;
-  final double? height;
-  final ui.ColorFilter? colorFilter;
-
-  static const Size svgSize = Size(${_d(_size.width)}, ${_d(_size.height)});
-
-  @override
-  RenderObject createRenderObject(BuildContext context) =>
-      ${widgetName}RenderObject()
-        ..width = width
-        ..height = height
-        ..colorFilter = colorFilter;
-
-  @override
-  void updateRenderObject(
-    BuildContext context,
-    ${widgetName}RenderObject renderObject,
-  ) {
-    renderObject
-      ..width = width
-      ..height = height
-      ..colorFilter = colorFilter;
-  }
-}
-
-class ${widgetName}RenderObject extends RenderBox {
-  ${widgetName}RenderObject();
-
-  final _painter = _${widgetName}Painter();
-  
-  ui.ColorFilter? _colorFilter;
-  double? _width;
-  double? _height;
-
-  set width(double? value) {
-    if (_width == value) {
-      return;
-    }
-    _width = value;
-    markNeedsLayout();
-  }
-
-  set height(double? value) {
-    if (_height == value) {
-      return;
-    }
-    _height = value;
-    markNeedsLayout();
-  }
-
-  set colorFilter(ui.ColorFilter? value) {
-    if (_colorFilter == value) {
-      return;
-    }
-    _colorFilter = value;
-    markNeedsPaint();
-  }
-
-  double _scale = 1.0;
-
-  @override
-  bool get isRepaintBoundary => false;
-
-  @override
-  bool get sizedByParent => false;
-
-  @override
-  Size computeDryLayout(BoxConstraints constraints) {
-    final desiredWidth = _width ?? $widgetName.svgSize.width;
-    final desiredHeight = _height ?? $widgetName.svgSize.height;
-    final desiredSize = Size(desiredWidth, desiredHeight);
-    return constraints.constrain(desiredSize);
-  }
-
-  @override
-  void performLayout() {
-    size = computeDryLayout(constraints);
-    if ($widgetName.svgSize.width == 0 || $widgetName.svgSize.height == 0) {
-      _scale = 1.0;
-      return;
-    }
-    _scale = min(
-      size.width / $widgetName.svgSize.width,
-      size.height / $widgetName.svgSize.height,
-    );
-  }
-
-  @override
-  bool hitTestSelf(Offset position) => true;
-
-  @override
-  void paint(PaintingContext context, Offset offset) {
-    final scale = _scale;
-    final canvas = context.canvas..save();
-
-    final dx = (size.width - $widgetName.svgSize.width * scale) / 2;
-    final dy = (size.height - $widgetName.svgSize.height * scale) / 2;
-
-    canvas
-      ..translate(offset.dx + dx, offset.dy + dy)
-      ..clipRect(Offset.zero & size)
-      ..scale(scale, scale);
-
-    canvas.drawPicture(_painter.getPicture(_colorFilter));
-
-    canvas.restore();
-  }
-}
-
-class _${widgetName}Painter {
-  ui.Picture? _picture;
-  ui.ColorFilter? _colorFilter;
-
-  ui.Picture getPicture(ui.ColorFilter? newColorFilter) {
-    if (_picture == null || _colorFilter != newColorFilter) {
-      _colorFilter = newColorFilter;
-      _createPicture();
-    }
-    return _picture!;
-  }
-
-  void _createPicture() {
-    _picture?.dispose();
-    final recorder = ui.PictureRecorder();
-    final canvas = Canvas(recorder);
-
-    ${_definitions.toString()}
-    ${_drawCommands.toString()}
-     _picture = recorder.endRecording();
-  }
-}
-''');
-
-    return buffer.toString();
-  }
 
   @override
   void onSize(double width, double height) {
@@ -224,13 +74,13 @@ class _${widgetName}Painter {
     final paintVar = 'paint$id${paintStyle == 0 ? 'Fill' : 'Stroke'}';
     _paints[id] = paintVar;
     _definitions
-      ..write('    final $paintVar = Paint()..isAntiAlias = true')
+      ..write('final $paintVar = Paint()..isAntiAlias = true')
       ..writeln(
           '..style = PaintingStyle.${paintStyle == 0 ? 'fill' : 'stroke'};');
     if (shaderId != null && _shaders.containsKey(shaderId)) {
-      _definitions.writeln('    $paintVar.shader = ${_shaders[shaderId]};');
+      _definitions.writeln('$paintVar.shader = ${_shaders[shaderId]};');
     } else {
-      _definitions.writeln('    $paintVar.color = ${_colorToCode(color)};');
+      _definitions.writeln('$paintVar.color = ${_colorToCode(color)};');
     }
 
     _definitions.writeln('$paintVar.colorFilter = _colorFilter;');
@@ -239,27 +89,28 @@ class _${widgetName}Painter {
       // Stroke
       // SVG's default stroke width is 1.0. Flutter's default is 0.0.
       if (strokeWidth != null && strokeWidth != 0.0) {
-        _definitions.writeln('    $paintVar.strokeWidth = ${_d(strokeWidth)};');
+        _definitions
+            .writeln('$paintVar.strokeWidth = ${shortDouble(strokeWidth)};');
       }
       if (strokeCap != null && strokeCap != 0) {
         _definitions.writeln(
-          '    $paintVar.strokeCap = StrokeCap.${StrokeCap.values[strokeCap].name};',
+          '$paintVar.strokeCap = StrokeCap.${StrokeCap.values[strokeCap].name};',
         );
       }
       if (strokeJoin != null && strokeJoin != 0) {
         _definitions.writeln(
-          '    $paintVar.strokeJoin = StrokeJoin.${StrokeJoin.values[strokeJoin].name};',
+          '$paintVar.strokeJoin = StrokeJoin.${StrokeJoin.values[strokeJoin].name};',
         );
       }
       if (strokeMiterLimit != null && strokeMiterLimit != 4.0) {
         _definitions.writeln(
-          '    $paintVar.strokeMiterLimit = ${_d(strokeMiterLimit)};',
+          '$paintVar.strokeMiterLimit = ${shortDouble(strokeMiterLimit)};',
         );
       }
     }
     if (blendMode != 0) {
       _definitions.writeln(
-        '    $paintVar.blendMode = BlendMode.${BlendMode.values[blendMode].name};',
+        '$paintVar.blendMode = BlendMode.${BlendMode.values[blendMode].name};',
       );
     }
     _definitions.writeln();
@@ -269,30 +120,30 @@ class _${widgetName}Painter {
   void onPathStart(int id, int fillType) {
     final pathVar = 'path_$id';
     _paths[id] = pathVar;
-    _currentPathBuffer = StringBuffer('    final $pathVar = Path()');
+    _currentPathBuffer = StringBuffer('final $pathVar = Path()');
     if (fillType != 0) {
       _currentPathBuffer!.write('..fillType = PathFillType.values[$fillType]');
     }
   }
 
   @override
-  void onPathMoveTo(double x, double y) =>
-      _currentPathBuffer!.write('..moveTo(${_d(x)}, ${_d(y)})');
+  void onPathMoveTo(double x, double y) => _currentPathBuffer!
+      .write('..moveTo(${shortDouble(x)}, ${shortDouble(y)})');
 
   @override
-  void onPathLineTo(double x, double y) =>
-      _currentPathBuffer!.write('..lineTo(${_d(x)}, ${_d(y)})');
+  void onPathLineTo(double x, double y) => _currentPathBuffer!
+      .write('..lineTo(${shortDouble(x)}, ${shortDouble(y)})');
 
   @override
   void onPathCubicTo(
           double x1, double y1, double x2, double y2, double x3, double y3) =>
       _currentPathBuffer!.write('..cubicTo('
-          '${_d(x1)}, '
-          '${_d(y1)}, '
-          '${_d(x2)}, '
-          '${_d(y2)}, '
-          '${_d(x3)}, '
-          '${_d(y3)})');
+          '${shortDouble(x1)}, '
+          '${shortDouble(y1)}, '
+          '${shortDouble(x2)}, '
+          '${shortDouble(y2)}, '
+          '${shortDouble(x3)}, '
+          '${shortDouble(y3)})');
 
   @override
   void onPathClose() {
@@ -312,7 +163,7 @@ class _${widgetName}Painter {
   void onDrawPath(int pathId, int? paintId, int? patternId) {
     final pathVar = _paths[pathId];
     final paintVar = _paints[paintId]!;
-    _drawCommands.writeln('    canvas.drawPath($pathVar, $paintVar);');
+    _drawCommands.writeln('canvas.drawPath($pathVar, $paintVar);');
   }
 
   @override
@@ -333,25 +184,25 @@ class _${widgetName}Painter {
         offsets?.isNotEmpty == true ? '[${offsets!.join(', ')}]' : 'null';
 
     _definitions
-      ..writeln('    final $shaderVar = ui.Gradient.linear(')
-      ..writeln('      const Offset(${_d(fromX)}, ${_d(fromY)}),')
-      ..writeln('      const Offset(${_d(toX)}, ${_d(toY)}),')
-      ..writeln('      [$colorsList],')
-      ..writeln('      $offsetsList,')
-      ..writeln('      ui.TileMode.${TileMode.values[tileMode].name},')
-      ..writeln('    );');
+      ..writeln('final $shaderVar = ui.Gradient.linear(')
+      ..writeln('const Offset(${shortDouble(fromX)}, ${shortDouble(fromY)}),')
+      ..writeln('const Offset(${shortDouble(toX)}, ${shortDouble(toY)}),')
+      ..writeln('[$colorsList],')
+      ..writeln('$offsetsList,')
+      ..writeln('ui.TileMode.${TileMode.values[tileMode].name},')
+      ..writeln(');');
   }
 
   @override
   void onClipPath(int pathId) {
     _drawCommands
-      ..writeln('    canvas.save();')
-      ..writeln('    canvas.clipPath(${_paths[pathId]});');
+      ..writeln('canvas.save();')
+      ..writeln('canvas.clipPath(${_paths[pathId]});');
   }
 
   @override
   void onMask() {
-    _drawCommands.writeln('    canvas.saveLayer(null, $_grayscaleDstInPaint);');
+    _drawCommands.writeln('canvas.saveLayer(null, $_grayscaleDstInPaint);');
   }
 
   @override
@@ -362,7 +213,9 @@ class _${widgetName}Painter {
     double width,
     double height,
     Float64List transform,
-  ) {}
+  ) {
+    throw const NotSupportedException('Patterns are not supported.');
+  }
 
   @override
   void onRadialGradient(
@@ -388,27 +241,28 @@ class _${widgetName}Painter {
         : 'null';
 
     _definitions
-      ..writeln('    final $shaderVar = ui.Gradient.radial(')
-      ..writeln('      const Offset(${_d(centerX)}, ${_d(centerY)}),')
-      ..writeln('      ${_d(radius)},')
-      ..writeln('      [$colorsList],')
-      ..writeln('      $offsetsList,')
-      ..writeln('      ui.TileMode.${TileMode.values[tileMode].name},')
-      ..writeln('      $transformList,')
+      ..writeln('final $shaderVar = ui.Gradient.radial(')
       ..writeln(
-          '      ${focalX != null ? 'const Offset(${_d(focalX)}, ${_d(focalY!)})' : 'null'},')
-      ..writeln('      0.0,')
-      ..writeln('    );');
+          'const Offset(${shortDouble(centerX)}, ${shortDouble(centerY)}),')
+      ..writeln('${shortDouble(radius)},')
+      ..writeln('[$colorsList],')
+      ..writeln('$offsetsList,')
+      ..writeln('ui.TileMode.${TileMode.values[tileMode].name},')
+      ..writeln('$transformList,')
+      ..writeln(
+          '${focalX != null ? 'const Offset(${shortDouble(focalX)}, ${shortDouble(focalY!)})' : 'null'},')
+      ..writeln('0.0,')
+      ..writeln(');');
   }
 
   @override
   void onRestoreLayer() {
-    _drawCommands.writeln('    canvas.restore();');
+    _drawCommands.writeln('canvas.restore();');
   }
 
   @override
   void onSaveLayer(int paintId) {
-    _drawCommands.writeln('    canvas.saveLayer(null, ${_paints[paintId]!});');
+    _drawCommands.writeln('canvas.saveLayer(null, ${_paints[paintId]!});');
   }
 
   @override
@@ -418,12 +272,12 @@ class _${widgetName}Painter {
     final indicesList =
         indices == null ? 'null' : 'Uint16List.fromList(${indices.toString()})';
     _definitions.writeln(
-      '    final $verticesVar = ui.Vertices.raw(ui.VertexMode.triangles, Float32List.fromList(${vertices.toString()}), indices: $indicesList);',
+      'final $verticesVar = ui.Vertices.raw(ui.VertexMode.triangles, Float32List.fromList(${vertices.toString()}), indices: $indicesList);',
     );
 
     final paintVar = _paints[paintId]!;
     _drawCommands.writeln(
-      '    canvas.drawVertices($verticesVar, BlendMode.srcOver, $paintVar);',
+      'canvas.drawVertices($verticesVar, BlendMode.srcOver, $paintVar);',
     );
   }
 
@@ -439,20 +293,27 @@ class _${widgetName}Painter {
     int decorationColor,
     int id,
   ) {
-    final configVar = 'textConfig$id';
-    _textConfigs[id] = configVar;
-    _definitions
-      ..writeln('    final $configVar = _TextConfig(')
-      ..writeln("      '${text.replaceAll("'", r"\'")}',")
-      ..writeln(
-          "      ${fontFamily == null ? 'null' : "'$fontFamily'"},") // ignore: unnecessary_string_escapes
-      ..writeln('      ${_d(xAnchorMultiplier)},')
-      ..writeln('      FontWeight.values[$fontWeight],')
-      ..writeln('      ${_d(fontSize)},')
-      ..writeln('      $decoration,')
-      ..writeln('      $decorationStyle,')
-      ..writeln('      ${_colorToCode(decorationColor)},')
-      ..writeln('    );');
+    final decorations = <String>[];
+    if (decoration & kUnderlineMask != 0) {
+      decorations.add('TextDecoration.underline');
+    }
+    if (decoration & kOverlineMask != 0) {
+      decorations.add('TextDecoration.overline');
+    }
+    if (decoration & kLineThroughMask != 0) {
+      decorations.add('TextDecoration.lineThrough');
+    }
+
+    _textConfig.add(_TextConfig(
+      text,
+      fontFamily,
+      xAnchorMultiplier,
+      fontWeight,
+      fontSize,
+      'TextDecoration.combine([${decorations.join(', ')}])',
+      decorationStyle,
+      Color(decorationColor),
+    ));
   }
 
   @override
@@ -465,60 +326,84 @@ class _${widgetName}Painter {
     bool reset,
     Float64List? transform,
   ) {
-    _usesTypedData = true;
-    final positionVar = 'textPosition$id';
-    _textPositions[id] = positionVar;
-    final transformList = transform == null
-        ? 'null'
-        : 'Float64List.fromList(${transform.toString()})';
-    _definitions.writeln(
-        '    const $positionVar = _TextPosition(${x == null ? 'null' : _d(x)}, ${y == null ? 'null' : _d(y)}, ${dx == null ? 'null' : _d(dx)}, ${dy == null ? 'null' : _d(dy)}, $reset, $transformList);');
+    _textPositions.add(_TextPosition(x, y, dx, dy, reset, transform));
   }
 
   @override
-  void onUpdateTextPosition(int id) {
-    // This logic is executed at generation time to track text position.
-    final positionVar = _textPositions[id];
-    _drawCommands
-      ..writeln('    // onUpdateTextPosition($id)')
-      ..writeln(
-        '    if ($positionVar.reset) { accumulatedTextPositionX = 0.0; textPositionY = 0.0; }',
-      )
-      ..writeln(
-        '    if ($positionVar.x != null) { accumulatedTextPositionX = $positionVar.x!; }',
-      )
-      ..writeln(
-        '    if ($positionVar.y != null) { textPositionY = $positionVar.y!; }',
-      )
-      ..writeln(
-        '    if ($positionVar.dx != null) { accumulatedTextPositionX = (accumulatedTextPositionX ?? 0.0) + $positionVar.dx!; }',
-      )
-      ..writeln(
-        '    if ($positionVar.dy != null) { textPositionY = textPositionY + $positionVar.dy!; }',
-      );
+  void onUpdateTextPosition(int textPositionId) {
+    final position = _textPositions[textPositionId];
+    if (!_isDefineDrawTextVars) {
+      _drawCommands
+        ..writeln('double accumulatedTextWidth = 0;\n')
+        ..writeln('double paragraphWidth = 0;\n');
+      _isDefineDrawTextVars = true;
+    }
+
+    if (position.reset) {
+      _textPositionX = 0;
+      _textPositionY = 0;
+
+      _drawCommands.writeln('accumulatedTextWidth = 0;\n');
+    }
+
+    if (position.x != null) {
+      _textPositionX = position.x ?? _textPositionX;
+    }
+    if (position.y != null) {
+      _textPositionY = position.y ?? _textPositionY;
+    }
+
+    if (position.dx != null) {
+      _textPositionX = _textPositionX + position.dx!;
+    }
+    if (position.dy != null) {
+      _textPositionY = _textPositionY + position.dy!;
+    }
+
+    _textTransform = position.transform;
   }
 
   @override
   void onDrawText(int textId, int? fillId, int? strokeId, int? patternId) {
-    final fillPaint = fillId != null ? _paints[fillId] : 'null';
-    final textConfig = _textConfigs[textId];
+    final config = _textConfig[textId];
+    final fillPaint = fillId != null ? _paints[fillId] : null;
+    final strokePaint = strokeId != null ? _paints[strokeId] : null;
+    final dx = _textPositionX ?? 0;
+    final dy = _textPositionY;
+    final transform = _textTransform;
 
-    _drawCommands
-      ..writeln('    // Draw text')
-      ..writeln('    {')
-      ..writeln(
-        '     final paragraph = _buildParagraph($textConfig, $fillPaint);',
-      )
-      ..writeln('      final dx = accumulatedTextPositionX ?? 0;')
-      ..writeln('      final dy = textPositionY;')
-      ..writeln(
-        '      canvas.drawParagraph(paragraph, Offset(dx - paragraph.maxIntrinsicWidth * $textConfig.xAnchorMultiplier, dy - paragraph.alphabeticBaseline));',
-      )
-      ..writeln(
-        '      accumulatedTextPositionX = dx + paragraph.maxIntrinsicWidth;',
-      )
-      ..writeln('      paragraph.dispose();')
-      ..writeln('    }');
+    if (!_isAddedDrawTextFunction) {
+      _drawCommands.writeln(drawTextFunction);
+      _isAddedDrawTextFunction = true;
+      _usesTypedData = true;
+    }
+
+    [fillPaint, strokePaint].whereType<String>().forEach((paint) {
+      _drawCommands
+        ..writeln('drawText($paint,')
+        ..writeln("  text: '${config.text}',")
+        ..writeln(' xAnchorMultiplier: ${config.xAnchorMultiplier},')
+        ..writeln(' fontWeight: ${config.fontWeight},')
+        ..writeln(
+            ' decorationStyle: TextDecorationStyle.values[${config.decorationStyle}],')
+        ..writeln(' dx: ${shortDouble(dx)},')
+        ..writeln(' dy: ${shortDouble(dy)},')
+        ..write(config.fontFamily != null
+            ? " fontFamily: '${config.fontFamily},'"
+            : '')
+        ..writeln(' fontSize:  ${shortDouble(config.fontSize)},')
+        ..writeln(' decoration:${config.decoration},')
+        ..writeln(
+            ' decorationColor: ${_colorToCode(config.decorationColor.value)},')
+        ..write(transform != null
+            ? 'transform: Float64List.fromList(${transform.map(shortDouble).toList()}),'
+            : '')
+        ..writeln(');')
+        ..writeln('');
+    });
+
+    _drawCommands.writeln(
+        'accumulatedTextWidth = accumulatedTextWidth + paragraphWidth;\n');
   }
 
   @override
@@ -528,8 +413,7 @@ class _${widgetName}Painter {
     Uint8List data, {
     VectorGraphicsErrorListener? onError,
   }) {
-    _hasImages = true;
-    _images[imageId] = 'imageData$imageId';
+    // Not implemented as per request.
   }
 
   @override
@@ -541,24 +425,50 @@ class _${widgetName}Painter {
     double height,
     Float64List? transform,
   ) {
-    // Not implemented as per request.
-  }
-
-  void onPatternFinished() {
-    // Not implemented
-  }
-
-  void onTextLayout(double width, List<double> positions) {
-    // Not implemented
+    throw const NotSupportedException('Image drawing is not supported.');
   }
 }
 
-@internal
-class Size {
-  final double width;
-  final double height;
+class _TextPosition {
+  const _TextPosition(
+    this.x,
+    this.y,
+    this.dx,
+    this.dy,
+    this.reset,
+    this.transform,
+  );
 
-  const Size(this.width, this.height);
+  final double? x;
+  final double? y;
+  final double? dx;
+  final double? dy;
+  final bool reset;
+  final Float64List? transform;
 
-  static const Size zero = Size(0, 0);
+  @override
+  String toString() =>
+      'TextPosition(x: $x, y: $y, dx: $dx, dy: $dy, reset: $reset, transform: $transform)';
+}
+
+class _TextConfig {
+  const _TextConfig(
+    this.text,
+    this.fontFamily,
+    this.xAnchorMultiplier,
+    this.fontWeight,
+    this.fontSize,
+    this.decoration,
+    this.decorationStyle,
+    this.decorationColor,
+  );
+
+  final String text;
+  final String? fontFamily;
+  final double fontSize;
+  final double xAnchorMultiplier;
+  final int fontWeight;
+  final String decoration;
+  final int decorationStyle;
+  final Color decorationColor;
 }

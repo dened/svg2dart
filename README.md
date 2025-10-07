@@ -4,13 +4,25 @@
 
 This approach allows you to use your vector graphics directly in your Flutter application without runtime dependencies like `flutter_svg`, which can lead to better performance and a smaller dependency tree.
 
-![logo](.img/logo.png)
-## Features
+The conversion process is powered by the `vector_graphics_compiler` and `vector_graphics_codec` packages.
 
-- Converts SVG paths, fills, strokes, and basic gradients.
-- Generates a self-contained, high-performance `LeafRenderObjectWidget` for each SVG.
-- Supports processing a single SVG file or an entire directory of SVGs.
-- Preserves the source directory structure in the output directory.
+![logo](.img/logo.png)
+
+## Features
+*   **Pure Dart code**: Generates widgets based on `LeafRenderObjectWidget` and a pre-recorded `ui.Picture`, minimizing runtime overhead.
+*   **Optimizations**: Includes an optional `optimizations` flag that uses `pathops` for path simplification and `Tessellator` for direct GPU rendering.
+*   **Core SVG Support**: Converts paths, fills, strokes, and basic gradients.
+*   **Batch Processing**: Supports processing both single files and entire directories, preserving the source directory structure.
+*   **`build_runner` Integration**: Automates code generation within your development workflow.
+
+## Limitations
+
+Currently, the tool does not support the following SVG features:
+*   Raster images (`<image>`)
+*   Advanced SVG features (like filters, patterns, etc.)
+
+
+Files containing unsupported elements (like `<image>`) will be skipped during generation.
 
 ## Installation
 
@@ -34,7 +46,8 @@ svg2dart [options]
 |---|---|---|---|
 | `--input` | `-i` | Path to the input SVG file or directory. | Yes |
 | `--output` | `-o` | Path to the output Dart file or directory. | Yes |
-| `--help` | `-h` | Show the help message. | No |
+| `--optimizations` | | Enable optimizations (path simplification and tessellation). | No |
+| `--help` | `-h` | Показать справочное сообщение. | No |
 
 ### Examples
 
@@ -43,7 +56,7 @@ svg2dart [options]
 To convert a single SVG file into a Dart widget:
 
 ```bash
-svg2dart --input assets/icons/cloud.svg --output lib/icons/cloud.dart
+svg2dart --input assets/icons/cloud.svg --output lib/icons/
 ``` 
 
 This command will read `assets/icons/cloud.svg` and generate a `Cloud` widget inside `lib/icons/cloud.dart`.
@@ -64,8 +77,8 @@ For automatic code generation that integrates with your development workflow, yo
 
     ```yaml
     dev_dependencies:
-      build_runner: ^2.4.0 # or latest
-      svg2dart: ^0.0.4 # or latest
+      build_runner: ^2.9.0 # or latest
+      svg2dart: ^0.0.7 # or latest
     ```
 
 2.  **Run the builder**:
@@ -92,8 +105,9 @@ targets:
           # Default is "assets/svg"
           input: "assets/my_icons"
           # Default is "lib/generated/svg"
-          output: "lib/my_generated_icons"
-```
+          output: "lib/generated/icons"          
+          # Default is false
+          optimizations: true
 ```
 
 ## Using the Generated Widget
@@ -101,7 +115,7 @@ targets:
 After generation, you can import the Dart file and use the widget like any other Flutter widget. You can override the original SVG dimensions by providing `width` and `height` properties.
 
 ```dart
-import 'package:my_app/generated/icons/cloud_icon.dart';
+import 'package:my_app/generated/icons/cloud.gen.dart';
 
 class MyScreen extends StatelessWidget {
   @override
@@ -109,9 +123,10 @@ class MyScreen extends StatelessWidget {
     return const Scaffold(
       body: Center(
         // Use the generated widget with a custom size
-        child: CloudIcon(
+        child: CloudSvg(
           width: 100,
           height: 100,
+          colorFilter: ColorFilter.mode(Colors.yellow, BlendMode.srcIn)
         ),
       ),
     );

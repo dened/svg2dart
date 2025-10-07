@@ -5,15 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "svg2dart: convert circle",
+            "name": "svg2dart: convert text",
             "request": "launch",
             "type": "dart",
             "program": "bin/svg2dart.dart",
             "args": [
                 "-i",
-                "assets/svg/generated.svg",
+                "example/assets/svg/",
                 "-o",
-                "lib/generated/icons/generated.dart",
+                "example/lib/generated/icons",
                 "--no-opt"
             ]
         },

@@ -1,16 +1,14 @@
-// ignore_for_file: cascade_invocations, prefer_int_literals, unused_import
-
 import 'dart:math';
+
 import 'dart:ui' as ui;
-import 'dart:typed_data';
 import 'package:flutter/widgets.dart';
 
-/// {@template Fire}
-/// Fire widget.
+/// {@template FireSvg}
+/// FireSvg widget.
 /// {@endtemplate}
-class Fire extends StatelessWidget {
-  /// {@macro Fire}
-  const Fire({super.key, this.width, this.height, this.colorFilter});
+class FireSvg extends LeafRenderObjectWidget {
+  /// {@macro FireSvg}
+  const FireSvg({super.key, this.width, this.height, this.colorFilter});
 
   final double? width;
   final double? height;
@@ -19,41 +17,123 @@ class Fire extends StatelessWidget {
   static const Size svgSize = Size(512, 512);
 
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
-      height: height,
-      child: CustomPaint(
-        painter: FirePainter(colorFilter: colorFilter),
-        size: svgSize,
-      ),
-    );
+  RenderObject createRenderObject(BuildContext context) => FireSvgRenderObject()
+    ..width = width
+    ..height = height
+    ..colorFilter = colorFilter;
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    FireSvgRenderObject renderObject,
+  ) {
+    renderObject
+      ..width = width
+      ..height = height
+      ..colorFilter = colorFilter;
   }
 }
 
-/// {@template FirePainter}
-/// Custom painter for [Fire].
-/// {@endtemplate}
-class FirePainter extends CustomPainter {
-  /// {@macro FirePainter}
-  const FirePainter({ui.ColorFilter? colorFilter}) : _colorFilter = colorFilter;
+class FireSvgRenderObject extends RenderBox {
+  FireSvgRenderObject();
 
-  final ui.ColorFilter? _colorFilter;
+  final _painter = _FireSvgPainter();
+
+  ui.ColorFilter? _colorFilter;
+  double? _width;
+  double? _height;
+
+  set width(double? value) {
+    if (_width == value) {
+      return;
+    }
+    _width = value;
+    markNeedsLayout();
+  }
+
+  set height(double? value) {
+    if (_height == value) {
+      return;
+    }
+    _height = value;
+    markNeedsLayout();
+  }
+
+  set colorFilter(ui.ColorFilter? value) {
+    if (_colorFilter == value) {
+      return;
+    }
+    _colorFilter = value;
+    markNeedsPaint();
+  }
+
+  double _scale = 1.0;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final scale = min(
-      size.width / Fire.svgSize.width,
-      size.height / Fire.svgSize.height,
-    );
+  bool get isRepaintBoundary => false;
 
-    canvas.save();
-    final dx = (size.width - Fire.svgSize.width * scale) / 2;
-    final dy = (size.height - Fire.svgSize.height * scale) / 2;
+  @override
+  bool get sizedByParent => false;
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    final desiredWidth = _width ?? FireSvg.svgSize.width;
+    final desiredHeight = _height ?? FireSvg.svgSize.height;
+    final desiredSize = Size(desiredWidth, desiredHeight);
+    return constraints.constrain(desiredSize);
+  }
+
+  @override
+  void performLayout() {
+    size = computeDryLayout(constraints);
+    if (FireSvg.svgSize.width == 0 || FireSvg.svgSize.height == 0) {
+      _scale = 1.0;
+      return;
+    }
+    _scale = min(
+      size.width / FireSvg.svgSize.width,
+      size.height / FireSvg.svgSize.height,
+    );
+  }
+
+  @override
+  bool hitTestSelf(Offset position) => true;
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final scale = _scale;
+    final canvas = context.canvas..save();
+
+    final dx = (size.width - FireSvg.svgSize.width * scale) / 2;
+    final dy = (size.height - FireSvg.svgSize.height * scale) / 2;
+
     canvas
-      ..translate(dx, dy)
+      ..translate(offset.dx + dx, offset.dy + dy)
       ..clipRect(Offset.zero & size)
-      ..scale(scale);
+      ..scale(scale, scale);
+
+    canvas.drawPicture(_painter.getPicture(_colorFilter));
+
+    canvas.restore();
+  }
+}
+
+class _FireSvgPainter {
+  ui.Picture? _picture;
+  ui.ColorFilter? _colorFilter;
+
+  ui.Picture getPicture(ui.ColorFilter? newColorFilter) {
+    if (_picture == null || _colorFilter != newColorFilter) {
+      _colorFilter = newColorFilter;
+      _createPicture();
+    }
+    return _picture!;
+  }
+
+  void _createPicture() {
+    _picture?.dispose();
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
 
     final paint0Fill = Paint()
       ..isAntiAlias = true
@@ -304,10 +384,6 @@ class FirePainter extends CustomPainter {
     canvas.drawPath(path_13, paint7Fill);
     canvas.drawPath(path_14, paint7Fill);
 
-    canvas.restore();
+    _picture = recorder.endRecording();
   }
-
-  @override
-  bool shouldRepaint(FirePainter oldDelegate) =>
-      oldDelegate._colorFilter != _colorFilter;
 }

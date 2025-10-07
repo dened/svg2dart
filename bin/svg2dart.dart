@@ -4,6 +4,7 @@ import 'dart:io' as io;
 import 'package:args/args.dart';
 import 'package:path/path.dart' as p;
 import 'package:svg2dart/generator.dart';
+import 'package:svg2dart/src/not_supported_exception.dart';
 import 'package:vector_graphics_compiler/vector_graphics_compiler.dart'
     show
         initializePathOpsFromFlutterCache,
@@ -11,15 +12,6 @@ import 'package:vector_graphics_compiler/vector_graphics_compiler.dart'
 
 final $info = io.stdout.writeln; // Log to stdout
 final $err = io.stderr.writeln; // Log to stderr
-
-Future<void> _fix(String path) async {
-  $info('Applying fixes to $path...');
-  final result = await io.Process.run('dart', ['fix', '--apply', path]);
-  if (result.exitCode != 0) {
-    // Don't exit, just warn.
-    $err('Could not apply fixes to $path. Error: ${result.stderr}');
-  }
-}
 
 void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
       () async {
@@ -32,14 +24,6 @@ void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
               abbr: 'o',
               help: 'Path to the output Dart file or directory.',
               mandatory: true)
-          ..addOption(
-            'convertTo',
-            abbr: 'c',
-            allowed: ['record', 'customPainter', 'renderBox'],
-            defaultsTo: 'record',
-            help:
-                'The type of class to generate (record, customPainter, or renderBox).',
-          )
           ..addFlag(
             'optimizations',
             aliases: ['opt'],
@@ -77,46 +61,55 @@ void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
         }
 
         final inputType = io.FileSystemEntity.typeSync(inputPath);
+        final outputType = io.FileSystemEntity.typeSync(outputPath);
+
+        if (outputType != io.FileSystemEntityType.directory) {
+          $err('Error: Output path must be a directory: $outputPath');
+          io.exit(1);
+        }
 
         if (inputType == io.FileSystemEntityType.notFound) {
           $err('Error: Input path does not exist: $inputPath');
           io.exit(1);
         }
 
-        if (inputType == io.FileSystemEntityType.file) {
-          if (p.extension(outputPath) == '') {
-            $err(
-                'Error: When input is a file, output must be a file path (e.g., path/to/file.dart).');
-            io.exit(1);
-          }
-          $info('Start parsing file $inputPath...');
-          await generateWidgets(inputPath, outputPath);
-          await _fix(outputPath);
-          $info('Finished conversion.');
-        } else if (inputType == io.FileSystemEntityType.directory) {
-          if (p.extension(outputPath) != '') {
-            $err('When input is a directory, output must also be a directory.');
-            io.exit(1);
-          }
+        late List<io.File> svgFiles;
+        final inputDir = inputType == io.FileSystemEntityType.directory
+            ? inputPath
+            : p.dirname(inputPath);
 
-          final svgFiles = io.Directory(inputPath)
+        if (inputType == io.FileSystemEntityType.file) {
+          svgFiles = [io.File(inputPath)];
+        } else if (inputType == io.FileSystemEntityType.directory) {
+          svgFiles = io.Directory(inputPath)
               .listSync(recursive: true)
               .whereType<io.File>()
-              .where((file) => p.extension(file.path) == '.svg');
+              .where((file) => p.extension(file.path) == '.svg')
+              .toList();
 
           $info('Found ${svgFiles.length} SVG files in $inputPath.');
-          $info('Starting conversion...');
+        }
 
-          for (final svgFile in svgFiles) {
-            final relativePath = p.relative(svgFile.path, from: inputPath);
+        $info('Starting conversion...');
+        var skip = 0;
+        for (final svgFile in svgFiles) {
+          try {
+            final relativePath = p.relative(svgFile.path, from: inputDir);
             final outputFilePath = p.setExtension(
                 p.join(outputPath, relativePath.replaceAll('-', '_')),
                 '.gen.dart');
-            await generateWidgets(svgFile.path, outputFilePath);
+            generateWidgets(svgFile.path, outputFilePath);
+          } on NotSupportedException catch (e) {
+            $info('Warning: ${e.message} Skipping file: ${svgFile.path}');
+            skip++;
+          
           }
-          await _fix(outputPath);
-          $info('Finished conversion of all SVG files.');
         }
+
+        final converted = svgFiles.length - skip;
+        final total = svgFiles.length;
+
+        $info('Finished conversion [$converted/$total] files.');
       },
       (error, stackTrace) {
         $err('Error: $error');

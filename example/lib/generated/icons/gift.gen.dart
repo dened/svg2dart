@@ -1,16 +1,14 @@
-// ignore_for_file: cascade_invocations, prefer_int_literals, unused_import
-
 import 'dart:math';
+
 import 'dart:ui' as ui;
-import 'dart:typed_data';
 import 'package:flutter/widgets.dart';
 
-/// {@template Gift}
-/// Gift widget.
+/// {@template GiftSvg}
+/// GiftSvg widget.
 /// {@endtemplate}
-class Gift extends StatelessWidget {
-  /// {@macro Gift}
-  const Gift({super.key, this.width, this.height, this.colorFilter});
+class GiftSvg extends LeafRenderObjectWidget {
+  /// {@macro GiftSvg}
+  const GiftSvg({super.key, this.width, this.height, this.colorFilter});
 
   final double? width;
   final double? height;
@@ -19,41 +17,123 @@ class Gift extends StatelessWidget {
   static const Size svgSize = Size(500, 400);
 
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: width,
-      height: height,
-      child: CustomPaint(
-        painter: GiftPainter(colorFilter: colorFilter),
-        size: svgSize,
-      ),
-    );
+  RenderObject createRenderObject(BuildContext context) => GiftSvgRenderObject()
+    ..width = width
+    ..height = height
+    ..colorFilter = colorFilter;
+
+  @override
+  void updateRenderObject(
+    BuildContext context,
+    GiftSvgRenderObject renderObject,
+  ) {
+    renderObject
+      ..width = width
+      ..height = height
+      ..colorFilter = colorFilter;
   }
 }
 
-/// {@template GiftPainter}
-/// Custom painter for [Gift].
-/// {@endtemplate}
-class GiftPainter extends CustomPainter {
-  /// {@macro GiftPainter}
-  const GiftPainter({ui.ColorFilter? colorFilter}) : _colorFilter = colorFilter;
+class GiftSvgRenderObject extends RenderBox {
+  GiftSvgRenderObject();
 
-  final ui.ColorFilter? _colorFilter;
+  final _painter = _GiftSvgPainter();
+
+  ui.ColorFilter? _colorFilter;
+  double? _width;
+  double? _height;
+
+  set width(double? value) {
+    if (_width == value) {
+      return;
+    }
+    _width = value;
+    markNeedsLayout();
+  }
+
+  set height(double? value) {
+    if (_height == value) {
+      return;
+    }
+    _height = value;
+    markNeedsLayout();
+  }
+
+  set colorFilter(ui.ColorFilter? value) {
+    if (_colorFilter == value) {
+      return;
+    }
+    _colorFilter = value;
+    markNeedsPaint();
+  }
+
+  double _scale = 1.0;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final scale = min(
-      size.width / Gift.svgSize.width,
-      size.height / Gift.svgSize.height,
-    );
+  bool get isRepaintBoundary => false;
 
-    canvas.save();
-    final dx = (size.width - Gift.svgSize.width * scale) / 2;
-    final dy = (size.height - Gift.svgSize.height * scale) / 2;
+  @override
+  bool get sizedByParent => false;
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) {
+    final desiredWidth = _width ?? GiftSvg.svgSize.width;
+    final desiredHeight = _height ?? GiftSvg.svgSize.height;
+    final desiredSize = Size(desiredWidth, desiredHeight);
+    return constraints.constrain(desiredSize);
+  }
+
+  @override
+  void performLayout() {
+    size = computeDryLayout(constraints);
+    if (GiftSvg.svgSize.width == 0 || GiftSvg.svgSize.height == 0) {
+      _scale = 1.0;
+      return;
+    }
+    _scale = min(
+      size.width / GiftSvg.svgSize.width,
+      size.height / GiftSvg.svgSize.height,
+    );
+  }
+
+  @override
+  bool hitTestSelf(Offset position) => true;
+
+  @override
+  void paint(PaintingContext context, Offset offset) {
+    final scale = _scale;
+    final canvas = context.canvas..save();
+
+    final dx = (size.width - GiftSvg.svgSize.width * scale) / 2;
+    final dy = (size.height - GiftSvg.svgSize.height * scale) / 2;
+
     canvas
-      ..translate(dx, dy)
+      ..translate(offset.dx + dx, offset.dy + dy)
       ..clipRect(Offset.zero & size)
-      ..scale(scale);
+      ..scale(scale, scale);
+
+    canvas.drawPicture(_painter.getPicture(_colorFilter));
+
+    canvas.restore();
+  }
+}
+
+class _GiftSvgPainter {
+  ui.Picture? _picture;
+  ui.ColorFilter? _colorFilter;
+
+  ui.Picture getPicture(ui.ColorFilter? newColorFilter) {
+    if (_picture == null || _colorFilter != newColorFilter) {
+      _colorFilter = newColorFilter;
+      _createPicture();
+    }
+    return _picture!;
+  }
+
+  void _createPicture() {
+    _picture?.dispose();
+    final recorder = ui.PictureRecorder();
+    final canvas = Canvas(recorder);
 
     final paint0Fill = Paint()
       ..isAntiAlias = true
@@ -544,10 +624,6 @@ class GiftPainter extends CustomPainter {
     canvas.drawPath(path_50, paint6Fill);
     canvas.drawPath(path_51, paint7Fill);
 
-    canvas.restore();
+    _picture = recorder.endRecording();
   }
-
-  @override
-  bool shouldRepaint(GiftPainter oldDelegate) =>
-      oldDelegate._colorFilter != _colorFilter;
 }

@@ -1,0 +1,6 @@
+<svg height="125" width="210" xmlns="http://www.w3.org/2000/svg">
+  <text x="5" y="30" fill="red" font-size="35" transform="rotate(30 20,40)">I Love <tspan fill="pink" stroke="green">SVG</tspan> !</text>
+
+  <text x="5" y="60" fill="blue" font-size="35">I Love <tspan fill="black" stroke="yellow">SVG</tspan> !
+  </text>
+</svg>

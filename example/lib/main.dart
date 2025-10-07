@@ -1,8 +1,8 @@
-import 'package:example/generated/icons/circle.dart';
-import 'package:example/generated/icons/cloud.dart';
-import 'package:example/generated/icons/fire.dart';
-import 'package:example/generated/icons/generated.dart';
-import 'package:example/generated/icons/gift.dart';
+import 'package:example/generated/icons/gradient.gen.dart';
+import 'package:example/generated/icons/mask.gen.dart';
+import 'package:example/generated/icons/text.gen.dart';
+import 'package:example/generated/icons/fire.gen.dart';
+import 'package:example/generated/icons/gift.gen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -45,57 +45,37 @@ class MyHomePage extends StatelessWidget {
       body: GridView.count(
         crossAxisCount: 2,
         children: <Widget>[
+          /// Support gradient
           SvgPicture.asset(
-            'assets/svg/circle.svg',
+            'assets/svg/gradient.svg',
             width: dimesion,
             height: dimesion,
           ),
-          Circle(width: dimesion, height: dimesion),
+          GradientSvg(),
 
-          ///
-          SvgPicture.asset('assets/svg/circle.svg', colorFilter: colorFilter),
-          Circle(colorFilter: colorFilter),
+          /// Support text
+          SvgPicture.asset(
+            'assets/svg/text.svg',
+            width: dimesion,
+            height: dimesion,
+          ),
+          TextSvg(),
 
-          ///
-          ///
-          SvgPicture.asset('assets/svg/cloud.svg'),
-          Cloud(),
-
-          ///
-          ///
-          ///
+          /// Complex SVG
           SvgPicture.asset('assets/svg/fire.svg'),
-          Fire(),
+          FireSvg(),
 
-          ///
-          Center(
-            child: SvgPicture.asset(
-              'assets/svg/fire.svg',
-              width: dimesion,
-              height: dimesion,
-            ),
-          ),
-          Center(
-            child: Fire(width: dimesion, height: dimesion),
-          ),
-
-          ///
-          SvgPicture.asset('assets/svg/gift.svg'),
-          Gift(),
-
-          ///
+          /// Color filter
           SvgPicture.asset('assets/svg/gift.svg', colorFilter: colorFilter),
-          Gift(colorFilter: colorFilter),
+          GiftSvg(colorFilter: colorFilter),
 
-          ///
+          /// Support musks
           SvgPicture.asset(
-            'assets/svg/generated.svg',
+            'assets/svg/mask.svg',
             width: dimesion,
             height: dimesion,
           ),
-          Generated(),
-
-          ///
+          MaskSvg(),
         ],
       ),
     );

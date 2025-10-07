@@ -1,25 +1,24 @@
-// ignore_for_file: cascade_invocations, prefer_int_literals, unused_import
-
 import 'dart:math';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:flutter/widgets.dart';
 
-/// {@template Cloud$SVG}
-/// Cloud$SVG widget.
+/// {@template GradientSvg}
+/// GradientSvg widget.
 /// {@endtemplate}
-class Cloud$SVG extends LeafRenderObjectWidget {
-  /// {@macro Cloud$SVG}
-  const Cloud$SVG({super.key, this.width, this.height, this.colorFilter});
+class GradientSvg extends LeafRenderObjectWidget {
+  /// {@macro GradientSvg}
+  const GradientSvg({super.key, this.width, this.height, this.colorFilter});
 
   final double? width;
   final double? height;
   final ui.ColorFilter? colorFilter;
 
-  static const Size svgSize = Size(463.8343, 463);
+  static const Size svgSize = Size(400, 150);
 
   @override
   RenderObject createRenderObject(BuildContext context) =>
-      Cloud$SVGRenderObject()
+      GradientSvgRenderObject()
         ..width = width
         ..height = height
         ..colorFilter = colorFilter;
@@ -27,7 +26,7 @@ class Cloud$SVG extends LeafRenderObjectWidget {
   @override
   void updateRenderObject(
     BuildContext context,
-    Cloud$SVGRenderObject renderObject,
+    GradientSvgRenderObject renderObject,
   ) {
     renderObject
       ..width = width
@@ -36,10 +35,10 @@ class Cloud$SVG extends LeafRenderObjectWidget {
   }
 }
 
-class Cloud$SVGRenderObject extends RenderBox {
-  Cloud$SVGRenderObject();
+class GradientSvgRenderObject extends RenderBox {
+  GradientSvgRenderObject();
 
-  final _painter = _Cloud$SVGPainter();
+  final _painter = _GradientSvgPainter();
 
   ui.ColorFilter? _colorFilter;
   double? _width;
@@ -79,8 +78,8 @@ class Cloud$SVGRenderObject extends RenderBox {
 
   @override
   Size computeDryLayout(BoxConstraints constraints) {
-    final desiredWidth = _width ?? Cloud$SVG.svgSize.width;
-    final desiredHeight = _height ?? Cloud$SVG.svgSize.height;
+    final desiredWidth = _width ?? GradientSvg.svgSize.width;
+    final desiredHeight = _height ?? GradientSvg.svgSize.height;
     final desiredSize = Size(desiredWidth, desiredHeight);
     return constraints.constrain(desiredSize);
   }
@@ -88,13 +87,13 @@ class Cloud$SVGRenderObject extends RenderBox {
   @override
   void performLayout() {
     size = computeDryLayout(constraints);
-    if (Cloud$SVG.svgSize.width == 0 || Cloud$SVG.svgSize.height == 0) {
+    if (GradientSvg.svgSize.width == 0 || GradientSvg.svgSize.height == 0) {
       _scale = 1.0;
       return;
     }
     _scale = min(
-      size.width / Cloud$SVG.svgSize.width,
-      size.height / Cloud$SVG.svgSize.height,
+      size.width / GradientSvg.svgSize.width,
+      size.height / GradientSvg.svgSize.height,
     );
   }
 
@@ -106,8 +105,8 @@ class Cloud$SVGRenderObject extends RenderBox {
     final scale = _scale;
     final canvas = context.canvas..save();
 
-    final dx = (size.width - Cloud$SVG.svgSize.width * scale) / 2;
-    final dy = (size.height - Cloud$SVG.svgSize.height * scale) / 2;
+    final dx = (size.width - GradientSvg.svgSize.width * scale) / 2;
+    final dy = (size.height - GradientSvg.svgSize.height * scale) / 2;
 
     canvas
       ..translate(offset.dx + dx, offset.dy + dy)
@@ -120,7 +119,7 @@ class Cloud$SVGRenderObject extends RenderBox {
   }
 }
 
-class _Cloud$SVGPainter {
+class _GradientSvgPainter {
   ui.Picture? _picture;
   ui.ColorFilter? _colorFilter;
 
@@ -137,27 +136,47 @@ class _Cloud$SVGPainter {
     final recorder = ui.PictureRecorder();
     final canvas = Canvas(recorder);
 
+    final shader0 = ui.Gradient.radial(
+      const Offset(0.25, 0.25),
+      0.5,
+      [const Color(0xffff0000), const Color(0xff0000ff)],
+      [0.0, 1.0],
+      ui.TileMode.repeated,
+      Float64List.fromList([
+        170.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        110.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        170.0,
+        0.0,
+        15.0,
+        15.0,
+        0.0,
+        1.0,
+      ]),
+      null,
+      0.0,
+    );
     final paint0Fill = Paint()
       ..isAntiAlias = true
       ..style = PaintingStyle.fill;
-    paint0Fill.color = const Color(0xffa3d4f7);
+    paint0Fill.shader = shader0;
     paint0Fill.colorFilter = _colorFilter;
     paint0Fill.blendMode = BlendMode.srcOver;
 
     final path_0 = Path()
-      ..moveTo(375.8359, 199.957)
-      ..cubicTo(369.9844, 199.957, 364.1445, 200.5391, 358.4102, 201.6992)
-      ..cubicTo(354.0859, 180.1172, 340.1055, 161.707, 320.4766, 151.7422)
-      ..cubicTo(300.8516, 141.7773, 277.7383, 141.3594, 257.7617, 150.6055)
-      ..cubicTo(239.6836, 100.8086, 184.6602, 75.0977, 134.8633, 93.1758)
-      ..cubicTo(85.0664, 111.2539, 59.3555, 166.2813, 77.4336, 216.0742)
-      ..cubicTo(33.8125, 217.4531, -0.6445, 253.5586, 0.0078, 297.1953)
-      ..cubicTo(0.6641, 340.8359, 36.1914, 375.8867, 79.8359, 375.957)
-      ..lineTo(375.8359, 375.957)
-      ..cubicTo(424.4336, 375.957, 463.8359, 336.5586, 463.8359, 287.957)
-      ..cubicTo(463.8359, 239.3555, 424.4336, 199.957, 375.8359, 199.957)
-      ..close()
-      ..moveTo(375.8359, 199.957);
+      ..moveTo(100, 15)
+      ..cubicTo(146.9128, 15, 185, 39.6447, 185, 70)
+      ..cubicTo(185, 100.3553, 146.9128, 125, 100, 125)
+      ..cubicTo(53.0872, 125, 15, 100.3553, 15, 70)
+      ..cubicTo(15, 39.6447, 53.0872, 15, 100, 15)
+      ..close();
 
     canvas.drawPath(path_0, paint0Fill);
 

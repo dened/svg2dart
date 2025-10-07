@@ -1,0 +1,14 @@
+<svg width="200" height="200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="grad-mask" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:black;"/>
+      <stop offset="100%" style="stop-color:white;"/>
+    </linearGradient>
+
+    <mask id="myMask">
+      <rect x="0" y="0" width="200" height="200" fill="url(#grad-mask)" />
+    </mask>
+  </defs>
+
+  <circle cx="100" cy="100" r="90" fill="blue" mask="url(#myMask)" />
+</svg>
