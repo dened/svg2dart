@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.7
+*   Added support for `<text>` elements in SVG files, allowing for the conversion of text-based graphics into Dart widgets.
+* Removed support to generate three types of classes for rendering, selectable with the `convertTo` option. Now only `LeafRenderObjectWidget` with pre-recorded `ui.Picture` is supported.
+
 ## 0.0.6
 * FIX: Ensure generated widgets properly clip their content to the specified width and height, preventing overflow issues.
 
