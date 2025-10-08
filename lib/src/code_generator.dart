@@ -368,7 +368,7 @@ Paint()
     final config = _textConfig[textId];
     final fillPaint = fillId != null ? _paints[fillId] : null;
     final strokePaint = strokeId != null ? _paints[strokeId] : null;
-    final dx = _textPositionX ?? 0;
+    final dx = _textPositionX;
     final dy = _textPositionY;
     final transform = _textTransform;
 
@@ -435,6 +435,7 @@ class _TextPosition {
     this.y,
     this.dx,
     this.dy,
+    // ignore: avoid_positional_boolean_parameters
     this.reset,
     this.transform,
   );

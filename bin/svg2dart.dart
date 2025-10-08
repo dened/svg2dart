@@ -27,8 +27,7 @@ void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
           ..addFlag(
             'optimizations',
             aliases: ['opt'],
-            help:
-                'Enable optimizations (e.g., path simplification, masking, overdraw).',
+            help: 'Enable optimizations.',
             defaultsTo: false,
           )
           ..addFlag('help',
@@ -102,7 +101,6 @@ void main([List<String> arguments = const <String>[]]) => runZonedGuarded<void>(
           } on NotSupportedException catch (e) {
             $info('Warning: ${e.message} Skipping file: ${svgFile.path}');
             skip++;
-          
           }
         }
 

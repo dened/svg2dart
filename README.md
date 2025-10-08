@@ -6,7 +6,7 @@ This approach allows you to use your vector graphics directly in your Flutter ap
 
 The conversion process is powered by the `vector_graphics_compiler` and `vector_graphics_codec` packages.
 
-![logo](.img/logo.png)
+![logo](img/logo.png)
 
 ## Features
 *   **Pure Dart code**: Generates widgets based on `LeafRenderObjectWidget` and a pre-recorded `ui.Picture`, minimizing runtime overhead.

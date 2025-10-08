@@ -1,15 +1,21 @@
 # Changelog
 
+## 0.0.8
+
+* FIX: code format.
+
 ## 0.0.7
-*   Added support for `<text>` elements in SVG files, allowing for the conversion of text-based graphics into Dart widgets.
+
+* Added support for `<text>` elements in SVG files, allowing for the conversion of text-based graphics into Dart widgets.
 * Removed support to generate three types of classes for rendering, selectable with the `convertTo` option. Now only `LeafRenderObjectWidget` with pre-recorded `ui.Picture` is supported.
 
 ## 0.0.6
+
 * FIX: Ensure generated widgets properly clip their content to the specified width and height, preventing overflow issues.
 
 ## 0.0.5
 
-*   Added the ability to generate three types of classes for rendering, selectable with the `convertTo` option:
+* Added the ability to generate three types of classes for rendering, selectable with the `convertTo` option:
     *   `customPainter`: Renders the SVG using a `CustomPainter`.
     *   `record`: Pre-records the SVG into a `ui.Picture` for optimized performance.
     *   `renderBox`: Renders the SVG directly within a `LeafRenderObjectWidget`.
@@ -24,6 +30,7 @@
 * Updated package description and `README.md` to reflect the new architecture.
 
 ## 0.0.3
+
 * Add support for build_runner
 
 ## 0.0.2
