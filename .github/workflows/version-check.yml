@@ -19,8 +19,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
         with:
-          # Fetch only the root files
-          sparse-checkout: .
+          sparse-checkout: |
+            .
+            .github/
+            tool/
 
       - name: 🚂 Setup Dart
         uses: ./.github/actions/setup-dart
