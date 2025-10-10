@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.0.10
+* chore: update deps
+* chore(ci): add github actions for checking version in README and pubspec.yaml
+
 ## 0.0.8
 
 * FIX: code format.
