@@ -1,40 +1,22 @@
 import 'dart:io' as io;
-
-enum _Level { info, error }
-
-void _log(_Level level, String message) {
-  // ignore: avoid_print
-  print('[${level.name.toUpperCase()}] $message');
-}
-
-void _info(String message) => _log(_Level.info, message);
-
-void _error(String message) {
-  _log(_Level.error, message);
-  io.exit(1);
-}
-
-void _complete(String message) {
-  _log(_Level.info, message);
-  io.exit(0);
-}
+import 'src/logger.dart';
 
 const pubspecPath = 'pubspec.yaml';
 const readmePath = 'readme.md';
 
 void main() {
-  _info('Running pre-commit checks...');
+  info('Running pre-commit checks...');
 
   final diffResult =
       io.Process.runSync('git', ['diff', '--cached', '--name-only']);
   if (diffResult.exitCode != 0) {
-    _error('Failed to get git diff: ${diffResult.stderr}');
+    error('Failed to get git diff: ${diffResult.stderr}');
   }
   final diffOutput = diffResult.stdout as String;
   final changedFiles = diffOutput.split('\n');
 
   if (!changedFiles.contains(pubspecPath)) {
-    _complete('No changes to $pubspecPath detected.');
+    complete('No changes to $pubspecPath detected.');
   }
 
   // read name and version from pubspec
@@ -45,7 +27,7 @@ void main() {
   final name = nameMatch?.group(1);
   final version = versionMatch?.group(1);
   if (name == null || version == null) {
-    _error('Failed to parse pubspec.yaml, name or version not found.');
+    error('Failed to parse pubspec.yaml, name or version not found.');
   }
 
   // update readme
@@ -57,14 +39,14 @@ void main() {
   );
 
   if (updatedReadmeContent == readmeContent) {
-    _complete('No changes to $readmePath detected.');
+    complete('No changes to $readmePath detected.');
   }
 
   readme.writeAsStringSync(updatedReadmeContent);
   final addResult = io.Process.runSync('git', ['add', '"$readmePath"']);
   if (addResult.exitCode != 0) {
-    _error('Failed to add $readmePath to git: ${addResult.stderr}');
+    error('Failed to add $readmePath to git: ${addResult.stderr}');
   }
 
-  _info('Updated $readmePath with new version.');
+  info('Updated $readmePath with new version.');
 }
