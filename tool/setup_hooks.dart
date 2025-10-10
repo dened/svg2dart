@@ -2,7 +2,7 @@ import 'dart:io' as io;
 import 'src/logger.dart';
 
 /// A tool to set up git hooks.
-/// 
+///
 /// This script creates a pre-commit hook that runs `tool/pre_commit.dart`.
 ///
 /// Usage: `dart tool/setup_hooks.dart`
@@ -14,17 +14,20 @@ void main() {
 
   if (!preCommitTool.existsSync()) {
     error('No tool/pre_commit.dart file found.');
+    io.exit(1);
   }
 
   if (!gitHookDir.existsSync()) {
     error('No .git/hooks directory found.');
+    io.exit(1);
   }
 
   final preCommitPath = '${gitHookDir.path}/pre-commit';
 
   final preCommitFile = io.File(preCommitPath);
   if (preCommitFile.existsSync()) {
-    error('pre-commit file is already exists.');
+    info('pre-commit file already exists.');
+    io.exit(0);
   }
 
   preCommitFile.writeAsStringSync('#!/usr/bin/env bash\n'

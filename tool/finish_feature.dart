@@ -1,9 +1,9 @@
+import 'dart:async';
 import 'dart:io' as io;
 
 import 'src/logger.dart';
 
 const masterBranch = 'master';
-
 
 /// A tool to automate the process of merging a feature branch
 /// into the master branch.
@@ -25,21 +25,23 @@ const masterBranch = 'master';
 ///
 /// If `feature-branch-name` is not provided, the script will prompt
 /// to select one.
-void main(List<String> args) async {
-  await _checkForUncommittedChanges();
-  final featureBranch = await _selectFeatureBranch(args);
-  await _formatAndCommitChanges(featureBranch);
-  await _squashCommits(featureBranch);
-  await _mergeBranch(featureBranch);
-  await _checkCommitInMaster(featureBranch);
-  await _deleteBranch(featureBranch);
-}
+void main(List<String> args) => runZonedGuarded(() async {
+      await _checkForUncommittedChanges();
+      final featureBranch = await _selectFeatureBranch(args);
+      await _formatAndCommitChanges(featureBranch);
+      await _squashCommits(featureBranch);
+      await _mergeBranch(featureBranch);
+      await _checkCommitInMaster(featureBranch);
+      await _deleteBranch(featureBranch);
+    }, (ex, st) {
+      error(ex.toString());
+      io.exit(1);
+    });
 
 Future<String> _run(String cmd, List<String> args) async {
   final result = await io.Process.run(cmd, args);
   if (result.exitCode != 0) {
-    error('Error running $cmd ${args.join(" ")}: ${result.stderr}');
-    io.exit(result.exitCode);
+    throw Exception('Error running $cmd ${args.join(" ")}: ${result.stderr}');
   }
   return (result.stdout as String).trim();
 }
@@ -52,8 +54,8 @@ Future<void> _checkForUncommittedChanges() async {
   ]);
 
   if (status.isNotEmpty) {
-    error('Uncommitted changes detected. Please commit them before proceeding.');
-    io.exit(1);
+    throw Exception(
+        'Uncommitted changes detected. Please commit them before proceeding.');
   }
 }
 
@@ -83,13 +85,11 @@ Future<String> _selectFeatureBranch(List<String> args) async {
   info('Write the number of the branch:');
   final input = io.stdin.readLineSync();
   if (input == null || input.isEmpty) {
-    error('No input provided. Exiting.');
-    io.exit(1);
+    throw Exception('No input provided. Exiting.');
   }
   final index = int.tryParse(input);
   if (index == null || index < 1 || index > allBranches.length) {
-    error('Invalid input. Exiting.');
-    io.exit(1);
+    throw Exception('Invalid input. Exiting.');
   }
   final branch = allBranches[index - 1];
   info('Selected branch: $branch');
@@ -133,7 +133,7 @@ Future<void> _squashCommits(String featureBranch) async {
 
   if (commitsToSquash <= 0) {
     info('No new commits to squash.');
-    return;
+    io.exit(0);
   }
 
   info('Branch $featureBranch has $commitsToSquash commits to squash.');
@@ -174,9 +174,9 @@ Future<void> _checkCommitInMaster(String featureBranch) async {
   if (result.exitCode == 0) {
     info('Merging is successefuly completed.');
   } else {
-    error('The last commit from $featureBranch is not in $masterBranch. '
+    throw Exception(
+        'The last commit from $featureBranch is not in $masterBranch. '
         'Merge failed.');
-    io.exit(1);
   }
 }
 

@@ -1,0 +1,16 @@
+name: Setup Dart
+description: Sets up the Dart environment
+
+inputs:
+  dart-version:
+    description: "The version of Dart to use"
+    required: false
+    default: "stable"
+
+runs:
+  using: composite
+  steps:
+    - name: 🚂 Setup Dart
+      uses: dart-lang/setup-dart@v1
+      with:
+        sdk: "${{ inputs.dart-version }}"

@@ -1,0 +1,31 @@
+name: Check README version sync
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'pubspec.yaml'
+      - 'README.md'
+  pull_request:
+    paths:
+      - 'pubspec.yaml'
+      - 'README.md'
+
+jobs:
+  version-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          # Fetch only the root files
+          sparse-checkout: .
+
+      - name: 🚂 Setup Dart
+        uses: ./.github/actions/setup-dart
+        with:
+          dart-version: stable
+
+      - name: 🚦 Check version sync
+        run: dart run tool/check_version.dart

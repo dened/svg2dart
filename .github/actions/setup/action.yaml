@@ -1,5 +1,5 @@
 name: Setup
-description: Sets up the Dart environment
+description: Sets up Dart, restores cache, and installs dependencies.
 
 inputs:
   dart-version:
@@ -14,9 +14,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: 📦 Checkout the repo
-      uses: actions/checkout@v4
-
     - name: 🔢 Set up version from tags
       id: set-version
       if: startsWith(github.ref, 'refs/tags')
@@ -29,10 +26,8 @@ runs:
         sed -i "s#^version: .*#version: ${VERSION}#" pubspec.yaml
         echo "Version set to $VERSION"
 
-    - name: 🚂 Setup Dart
-      uses: dart-lang/setup-dart@v1
-      with:
-        sdk: "${{ inputs.dart-version }}"
+    - name: 🚂 Setup Dart SDK
+      uses: ./.github/actions/setup-dart
 
     - name: 📤 Restore Pub modules
       id: cache-pub-restore
