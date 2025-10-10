@@ -22,6 +22,7 @@ jobs:
           sparse-checkout: |
             .
             .github/
+            tool/
 
       - name: 🚂 Setup Dart
         uses: ./.github/actions/setup-dart

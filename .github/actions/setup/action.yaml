@@ -41,7 +41,7 @@ runs:
       shell: bash
       run: |
         echo /home/runner/.pub-cache/bin >> $GITHUB_PATH
-        dart pub get
+        flutter pub get
 
     #- name: ⏲️ Run build runner
     #  shell: bash
