@@ -65,9 +65,7 @@ jobs:
       - name: 📦 Get the .github actions
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
-          sparse-checkout: |
-            .github
+          fetch-depth: 1 # Fetch only the latest commit
 
       - name: 🚂 Setup Dart and dependencies
         uses: ./.github/actions/setup
@@ -78,7 +76,7 @@ jobs:
         id: check-format
         timeout-minutes: 1
         run: |
-          find bin lib test -name "*.dart" ! -name "*.*.dart" -print0 | xargs -0 dart format --set-exit-if-changed --line-length 80 -o none bin/ lib/ test/
+          find bin lib test -name "*.dart" ! -name "*.*.dart" -print0 | xargs -0 dart format --set-exit-if-changed --line-length 80 -o none
 
       - name: 📈 Check analyzer
         id: check-analyzer
