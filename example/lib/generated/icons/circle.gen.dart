@@ -1,17 +1,3 @@
-import 'package:build/build.dart';
-import 'package:build_test/build_test.dart';
-import 'package:svg2dart/svg2dart.dart';
-import 'package:test/test.dart';
-
-void main() {
-  group('svg2dartBuilder', () {
-    const testSvg = '''
-<svg width="24" height="24" viewBox="0 0 24 24">
-  <circle cx="12" cy="12" r="10" fill="blue"/>
-</svg>
-''';
-
-    const expectedOutput = '''
 import 'dart:math';
 
 import 'dart:ui' as ui;
@@ -169,25 +155,4 @@ class _CircleSvgPainter {
 
     _picture = recorder.endRecording();
   }
-}
-''';
-
-    test('generates a Dart widget from a simple SVG', () async {
-      final builder = svg2dartBuilder(const BuilderOptions({
-        'input': 'assets/svg',
-        'output': 'lib/generated',
-        'convertTo': 'customPainter',
-      }));
-
-      await testBuilder(
-        builder,
-        {
-          'my_package|assets/svg/circle.svg': testSvg,
-        },
-        outputs: {
-          'my_package|lib/generated/circle.gen.dart': expectedOutput,
-        },
-      );
-    });
-  });
 }

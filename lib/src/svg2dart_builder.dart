@@ -18,7 +18,7 @@ class Svg2DartBuilder implements Builder {
 
   @override
   Map<String, List<String>> get buildExtensions => {
-        '${_options.input}/{{}}.svg': ['${_options.output}/{{}.gen.dart'],
+        '${_options.input}/{{}}.svg': ['${_options.output}/{{}}.gen.dart'],
       };
 
   @override
