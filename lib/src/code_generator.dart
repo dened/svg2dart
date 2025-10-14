@@ -389,7 +389,7 @@ Paint()
         ..writeln(' dx: ${shortDouble(dx)},')
         ..writeln(' dy: ${shortDouble(dy)},')
         ..write(config.fontFamily != null
-            ? " fontFamily: '${config.fontFamily},'"
+            ? " fontFamily: '${config.fontFamily}',"
             : '')
         ..writeln(' fontSize:  ${shortDouble(config.fontSize)},')
         ..writeln(' decoration:${config.decoration},')
