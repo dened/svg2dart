@@ -138,7 +138,14 @@ Future<void> _squashCommits(String featureBranch) async {
 
   info('Branch $featureBranch has $commitsToSquash commits to squash.');
 
-  if (commitsToSquash > 1) {
+  if (commitsToSquash == 1) {
+    info('Only one commit to squash. Nothing to do.');
+    return;
+  }
+
+  info('Must squashed commits [y/n]?');
+  final input = io.stdin.readLineSync();
+  if (input == 'y') {
     info('Please complete the rebase in the opened editor. '
         'After saving and closing the editor, restart the script.');
     await _run('git', ['checkout', featureBranch]);
@@ -146,8 +153,6 @@ Future<void> _squashCommits(String featureBranch) async {
     await _run('git', ['rebase', '-i', 'HEAD~$commitsToSquash']);
 
     io.exit(0);
-  } else {
-    info('Only one commit to squash. Nothing to do.');
   }
 }
 
