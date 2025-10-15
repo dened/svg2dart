@@ -25,30 +25,31 @@ const masterBranch = 'master';
 ///
 /// If `feature-branch-name` is not provided, the script will prompt
 /// to select one.
-void main(List<String> args) => runZonedGuarded(() async {
-      await _checkForUncommittedChanges();
-      final featureBranch = await _selectFeatureBranch(args);
-      await _formatAndCommitChanges(featureBranch);
-      await _squashCommits(featureBranch);
-      await _mergeBranch(featureBranch);
-      await _checkCommitInMaster(featureBranch);
-      await _deleteBranch(featureBranch);
+void main(List<String> args) => runZonedGuarded(() {
+      _checkForUncommittedChanges();
+      final featureBranch = _selectFeatureBranch(args);
+      _formatAndCommitChanges(featureBranch);
+      _trySyncFeatureBranch(featureBranch);
+      _squashCommits(featureBranch);
+      _mergeBranch(featureBranch);
+      _checkCommitInMaster(featureBranch);
+      _deleteBranch(featureBranch);
     }, (ex, st) {
       error(ex.toString());
       io.exit(1);
     });
 
-Future<String> _run(String cmd, List<String> args) async {
-  final result = await io.Process.run(cmd, args);
+String _run(String cmd, List<String> args) {
+  final result = io.Process.runSync(cmd, args);
   if (result.exitCode != 0) {
     throw Exception('Error running $cmd ${args.join(" ")}: ${result.stderr}');
   }
   return (result.stdout as String).trim();
 }
 
-Future<void> _checkForUncommittedChanges() async {
+void _checkForUncommittedChanges() {
   info('Checking for uncommitted changes...');
-  final status = await _run('git', [
+  final status = _run('git', [
     'status',
     '--porcelain',
   ]);
@@ -59,10 +60,10 @@ Future<void> _checkForUncommittedChanges() async {
   }
 }
 
-Future<String> _selectFeatureBranch(List<String> args) async {
+String _selectFeatureBranch(List<String> args) {
   info('Selecting feature branch...');
   final allBranchesStr =
-      await _run('git', ['branch', '--format', '%(refname:short)']);
+      _run('git', ['branch', '--format', '%(refname:short)']);
 
   final allBranches = allBranchesStr
       .split('\n')
@@ -96,9 +97,29 @@ Future<String> _selectFeatureBranch(List<String> args) async {
   return branch;
 }
 
-Future<void> _formatAndCommitChanges(String featureBranch) async {
+void _trySyncFeatureBranch(String featureBranch) {
+  if (_isBranchBehindMaster(featureBranch)) {
+    info('Please complete the rebase in the opened editor. '
+        'After saving and closing the editor, restart the script.');
+    _run('git', ['checkout', featureBranch]);
+    _run('git', ['rebase', masterBranch]);
+    io.exit(0);
+  }
+}
+
+bool _isBranchBehindMaster(String branch) {
+  final result = _run('git', [
+    'rev-list',
+    '--count',
+    '$branch..$masterBranch',
+  ]);
+
+  return (int.tryParse(result) ?? 0) > 0;
+}
+
+void _formatAndCommitChanges(String featureBranch) {
   info('Formatting and committing changes...');
-  final filesStr = await _run(
+  final filesStr = _run(
     'git',
     ['diff', '--name-only', '$masterBranch..$featureBranch'],
   );
@@ -106,26 +127,26 @@ Future<void> _formatAndCommitChanges(String featureBranch) async {
 
   if (files.isNotEmpty) {
     info('Formatting files: ${files.join(", ")}');
-    await _run('dart', ['format', ...files]);
+    _run('dart', ['format', ...files]);
 
-    final status = await _run('git', [
+    final status = _run('git', [
       'status',
       '--porcelain',
     ]);
     if (status.isNotEmpty) {
       info('Committing formatted files...');
-      await _run('git', [
+      _run('git', [
         'add',
         '.',
       ]);
-      await _run('git', ['commit', '-m', 'chore: Format dart files']);
+      _run('git', ['commit', '-m', 'chore: Format dart files']);
     }
   }
 }
 
-Future<void> _squashCommits(String featureBranch) async {
+void _squashCommits(String featureBranch) {
   info('Squashing commits...');
-  final countStr = await _run(
+  final countStr = _run(
     'git',
     ['rev-list', '--count', '$masterBranch..$featureBranch'],
   );
@@ -148,30 +169,30 @@ Future<void> _squashCommits(String featureBranch) async {
   if (input == 'y') {
     info('Please complete the rebase in the opened editor. '
         'After saving and closing the editor, restart the script.');
-    await _run('git', ['checkout', featureBranch]);
+    _run('git', ['checkout', featureBranch]);
 
-    await _run('git', ['rebase', '-i', 'HEAD~$commitsToSquash']);
+    _run('git', ['rebase', '-i', 'HEAD~$commitsToSquash']);
 
     io.exit(0);
   }
 }
 
-Future<void> _mergeBranch(String featureBranch) async {
+void _mergeBranch(String featureBranch) {
   info('Merging branch...');
   info('Checking out to $masterBranch...');
-  await _run('git', ['checkout', masterBranch]);
+  _run('git', ['checkout', masterBranch]);
 
   info('Fast-forward merging $featureBranch into $masterBranch...');
-  await _run('git', ['merge', '--ff-only', featureBranch]);
+  _run('git', ['merge', '--ff-only', featureBranch]);
 }
 
-Future<void> _checkCommitInMaster(String featureBranch) async {
+void _checkCommitInMaster(String featureBranch) {
   info('Checking commit in $masterBranch...');
 
-  final lastCommit = await _run('git', ['rev-parse', featureBranch]);
+  final lastCommit = _run('git', ['rev-parse', featureBranch]);
 
   // Check if the last commit from the feature branch is in master.
-  final result = await io.Process.run(
+  final result = io.Process.runSync(
     'git',
     ['merge-base', '--is-ancestor', lastCommit, 'master'],
   );
@@ -185,17 +206,17 @@ Future<void> _checkCommitInMaster(String featureBranch) async {
   }
 }
 
-Future<void> _deleteBranch(String featureBranch) async {
+void _deleteBranch(String featureBranch) {
   info('Deleting feature branch $featureBranch...');
-  await _run('git', ['branch', '-D', featureBranch]);
+  _run('git', ['branch', '-D', featureBranch]);
 
   // Check if the branch exists on the remote 'origin'
   // before trying to delete it.
-  final remoteCheckResult = await io.Process.run(
+  final remoteCheckResult = io.Process.runSync(
       'git', ['ls-remote', '--exit-code', 'origin', featureBranch]);
 
   if (remoteCheckResult.exitCode == 0) {
     info('Deleting remote branch $featureBranch from origin...');
-    await _run('git', ['push', 'origin', '--delete', featureBranch]);
+    _run('git', ['push', 'origin', '--delete', featureBranch]);
   }
 }
