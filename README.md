@@ -59,7 +59,7 @@ For automatic code generation that integrates with your development workflow, yo
     ```yaml
     dev_dependencies:
       build_runner: ^2.9.0 # or latest
-      svg2dart: ^0.0.10 # or latest
+      svg2dart: ^0.0.11 # or latest
     ```
 
 2.  **Run the builder**:
