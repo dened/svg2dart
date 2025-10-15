@@ -3,6 +3,8 @@
 ## 0.0.10
 * chore: update deps
 * chore(ci): add github actions for checking version in README and pubspec.yaml
+* chore(tool): convert async functions to sync and add a check if the branch is behind master
+* fix: correct string interpolation for fontFamily in Paint configuration
 
 ## 0.0.8
 

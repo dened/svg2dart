@@ -1,6 +1,6 @@
  # SVG to Dart Widget Converter 
 
-`svg2dart` is a command-line tool that converts SVG files into pure Dart code. It generates performant Flutter widgets that use `LeafRenderObjectWidget` and a pre-recorded `ui.Picture` for rendering.
+`svg2dart` is a command-line tool that converts SVG files into pure Dart code. It generates performant Flutter widgets that use `LeafRenderObjectWidget` and a pre-recorded `ui.Picture` for rendering. 
 
 This approach allows you to use your vector graphics directly in your Flutter application without runtime dependencies like `flutter_svg`, which can lead to better performance and a smaller dependency tree.
 
@@ -37,7 +37,7 @@ dart pub global activate svg2dart
 Once activated, you can use the `svg2dart` command from anywhere in your terminal.
 
 ```bash
-svg2dart [options]
+svg2dart --input assets/icons/ --output lib/icons/
 ```
 
 ### Options
@@ -47,27 +47,8 @@ svg2dart [options]
 | `--input` | `-i` | Path to the input SVG file or directory. | Yes |
 | `--output` | `-o` | Path to the output Dart file or directory. | Yes |
 | `--optimizations` | | Enable optimizations (path simplification and tessellation). | No |
-| `--help` | `-h` | Показать справочное сообщение. | No |
+| `--help` | `-h` | Show this help message.| No |
 
-### Examples
-
-#### 1. Converting a Single File
-
-To convert a single SVG file into a Dart widget:
-
-```bash
-svg2dart --input assets/icons/cloud.svg --output lib/icons/
-``` 
-
-This command will read `assets/icons/cloud.svg` and generate a `Cloud` widget inside `lib/icons/cloud.dart`.
-
-#### 2. Converting an Entire Directory
-
-To convert all `.svg` files within a directory (and its subdirectories):
-
-```bash
-svg2dart --input assets/icons/ --output lib/generated/icons/
-```
 
 ## Alternative: Usage with `build_runner`
 
@@ -78,7 +59,7 @@ For automatic code generation that integrates with your development workflow, yo
     ```yaml
     dev_dependencies:
       build_runner: ^2.9.0 # or latest
-      svg2dart: ^0.0.9 # or latest
+      svg2dart: ^0.0.10 # or latest
     ```
 
 2.  **Run the builder**:
@@ -92,8 +73,6 @@ For automatic code generation that integrates with your development workflow, yo
     dart run build_runner watch --delete-conflicting-outputs
     ```
 
-By default, the builder processes `.svg` files from the `assets/svg` directory and places the generated `.dart` files into `lib/generated/svg`. You can customize these paths by creating a `build.yaml` file in your project's root.
-
 Here is an example of a `build.yaml` file that changes the default input and output directories:
 
 ```yaml
@@ -106,13 +85,13 @@ targets:
           input: "assets/my_icons"
           # Default is "lib/generated/svg"
           output: "lib/generated/icons"          
-          # Default is false
-          optimizations: true
 ```
 
 ## Using the Generated Widget
 
 After generation, you can import the Dart file and use the widget like any other Flutter widget. You can override the original SVG dimensions by providing `width` and `height` properties.
+
+You can see an example of a generated widget and its usage in the `example` directory of this repository.
 
 ```dart
 import 'package:my_app/generated/icons/cloud.gen.dart';
