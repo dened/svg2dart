@@ -1,5 +1,8 @@
 # Changelog
 
+## 0.0.11
+* fix: update description in RREADME.md.
+
 ## 0.0.10
 * chore: update deps
 * chore(ci): add github actions for checking version in README and pubspec.yaml
@@ -7,8 +10,7 @@
 * fix: correct string interpolation for fontFamily in Paint configuration
 
 ## 0.0.8
-
-* FIX: code format.
+* fix: code format.
 
 ## 0.0.7
 

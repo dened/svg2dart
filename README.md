@@ -45,7 +45,7 @@ svg2dart --input assets/icons/ --output lib/icons/
 | Flag | Abbreviation | Description | Required |
 |---|---|---|---|
 | `--input` | `-i` | Path to the input SVG file or directory. | Yes |
-| `--output` | `-o` | Path to the output Dart file or directory. | Yes |
+| `--output` | `-o` | Path to the output directory. | Yes |
 | `--optimizations` | | Enable optimizations (path simplification and tessellation). | No |
 | `--help` | `-h` | Show this help message.| No |
 
