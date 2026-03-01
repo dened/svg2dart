@@ -39,7 +39,7 @@ dependencies:
   meta: ^1.16.0
   path: ^1.9.1
   vector_graphics_codec:  ^1.1.13 
-  vector_graphics_compiler:  ^1.1.19
+  vector_graphics_compiler: ^1.1.19
 
 dev_dependencies:
   build_runner: ^2.10.1 
